@@ -1,20 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
-	"runtime"
 	"path"
-    "bufio"
-	"strings"
-	"strconv"
+	"runtime"
 	"stevee2112/aoc-2021/util"
+	"strconv"
+	"strings"
 )
 
 func main() {
 
 	// Get Data
-	_, file, _,  _ := runtime.Caller(0)
+	_, file, _, _ := runtime.Caller(0)
 
 	input, _ := os.Open(path.Dir(file) + "/input")
 
@@ -30,10 +30,10 @@ func main() {
 
 		parts := strings.Split(instruction, " ")
 		direction := parts[0]
-		value,_ := strconv.Atoi(parts[1])
+		value, _ := strconv.Atoi(parts[1])
 
 		compassDir := util.South // initialize
-		switch (direction) {
+		switch direction {
 		case "forward":
 			compassDir = util.East
 		case "up":
@@ -59,6 +59,6 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Part 1: %d\n", util.Abs(subPart1.At().X) * util.Abs(subPart1.At().Y))
-	fmt.Printf("Part 2: %d\n", util.Abs(subPart2.At().X) * util.Abs(subPart2.At().Y))
+	fmt.Printf("Part 1: %d\n", util.Abs(subPart1.At().X)*util.Abs(subPart1.At().Y))
+	fmt.Printf("Part 2: %d\n", util.Abs(subPart2.At().X)*util.Abs(subPart2.At().Y))
 }
