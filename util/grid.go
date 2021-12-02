@@ -19,6 +19,10 @@ const (
 	West  = Direction("W")
 )
 
+func (dg *DirectedGraph) At() Coordinate {
+	return dg.at
+}
+
 func (dg *DirectedGraph) SetCoordinate(coordinate Coordinate) *DirectedGraph {
 	dg.Map[coordinate.String()] = coordinate
 	dg.Visits[coordinate.String()]++
