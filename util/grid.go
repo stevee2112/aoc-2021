@@ -69,6 +69,10 @@ func (g Grid) SetValue(x int, y int, value interface{}) {
 	g[coordinate.String()] = coordinate
 }
 
+func (g Grid) GetCoordinate(x int, y int) Coordinate {
+	return g[fmt.Sprintf("%d,%d", x, y)]
+}
+
 func (g Grid) PrintGrid(padding int) {
 
 	for i := 0; i <= g.getMaxY();i++ {
@@ -84,6 +88,37 @@ func (g Grid) PrintGrid(padding int) {
 	fmt.Println("");
 }
 
+func (g Grid) Traverse(action func(coor Coordinate) bool) {
+	for _,coordinate := range g {
+		if !action(coordinate) { // stop if false
+			return
+		}
+	}
+}
+
+func (g Grid) GetRows() (rows [][]Coordinate) {
+	for i := 0; i <= g.getMaxY();i++ {
+		row := []Coordinate{}
+		for j := 0; j <= g.getMaxX();j++ {
+			row = append(row, g.GetCoordinate(j, i))
+		}
+		rows = append(rows,row)
+	}
+
+	return rows;
+}
+
+func (g Grid) GetCols() (cols [][]Coordinate) {
+	for i := 0; i <= g.getMaxX();i++ {
+		col := []Coordinate{}
+		for j := 0; j <= g.getMaxY();j++ {
+			col = append(col, g.GetCoordinate(i, j))
+		}
+		cols = append(cols,col)
+	}
+
+	return cols;
+}
 
 func (g Grid) getMinX() int {
 
