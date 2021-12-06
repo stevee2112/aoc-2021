@@ -110,6 +110,54 @@ func (g Grid) Traverse(action func(coor Coordinate) bool) {
 	}
 }
 
+// Returns all coordinates between and inclusive of the given start and end
+func (g Grid) GetPointsBetween(start Coordinate, end Coordinate) []Coordinate {
+
+	coordinates := []Coordinate{start}
+
+	if end.X == start.X && end.Y == start.Y {
+		return coordinates
+	}
+
+	slopeX := end.X - start.X
+	slopeY := end.Y - start.Y
+
+	gcd := Gcd(slopeX, slopeY)
+
+	slopeX = Abs(slopeX / gcd)
+	slopeY = Abs(slopeY / gcd)
+
+	if end.X < start.X {
+		slopeX = -slopeX
+	}
+
+	if end.Y < start.Y {
+		slopeY = -slopeY
+	}
+
+	// No slope given
+	if slopeX == 0 && slopeY == 0 {
+		return coordinates;
+	}
+
+	atX := start.X + slopeX
+	atY := start.Y + slopeY
+
+	for {
+		newCoordinate := g.GetCoordinate(atX, atY)
+
+		coordinates = append(coordinates, newCoordinate)
+		atX += slopeX
+		atY += slopeY
+
+		if newCoordinate.String() == end.String() {
+			break
+		}
+	}
+
+	return coordinates
+}
+
 func (g Grid) GetRows() (rows [][]Coordinate) {
 	for i := 0; i <= g.getMaxY();i++ {
 		row := []Coordinate{}

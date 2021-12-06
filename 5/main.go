@@ -61,28 +61,49 @@ func main() {
 		})
 	}
 
-	grid := util.MakeFullGrid(maxX, maxY, 0)
-	//grid.PrintGrid(0)
+	gridPart1 := util.MakeFullGrid(maxX, maxY, 0)
+	gridPart2 := util.MakeFullGrid(maxX, maxY, 0)
 
 	// Part 1
 	for _,vector := range vectors {
-		grid = applyVectorPart1(vector, grid)
+		gridPart1 = applyVectorPart1(vector, gridPart1)
 	}
 
-	//grid.PrintGrid(0)
 
-	count := 0
-	grid.Traverse(func(coor util.Coordinate) bool {
+	part1Count := 0
+	gridPart1.Traverse(func(coor util.Coordinate) bool {
 		intVal := coor.Value.(int)
 
 		if intVal >= 2 {
-			count++
+			part1Count++
 		}
 		return true
 	});
 
-	fmt.Printf("Part 1: %d\n", count)
-	fmt.Printf("Part 2: %d\n", 0)
+	// Part 2
+	for _,vector := range vectors {
+		coors := gridPart2.GetPointsBetween(vector.start, vector.end)
+		for _,coor := range coors {
+			current := gridPart2.GetCoordinate(coor.X, coor.Y)
+
+			newValue := current.Value.(int) + 1
+			gridPart2.SetValue(coor.X, coor.Y, newValue)
+		}
+
+	}
+
+	part2Count := 0
+	gridPart2.Traverse(func(coor util.Coordinate) bool {
+		intVal := coor.Value.(int)
+
+		if intVal >= 2 {
+			part2Count++
+		}
+		return true
+	});
+
+	fmt.Printf("Part 1: %d\n", part1Count)
+	fmt.Printf("Part 2: %d\n", part2Count)
 
 }
 
