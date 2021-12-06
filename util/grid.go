@@ -73,6 +73,19 @@ func (g Grid) GetCoordinate(x int, y int) Coordinate {
 	return g[fmt.Sprintf("%d,%d", x, y)]
 }
 
+func MakeFullGrid(x int, y int, value interface{}) (Grid) {
+
+	grid := Grid{}
+
+	for i := 0; i <= x;i++ {
+		for j := 0; j <= y;j++ {
+			grid.SetValue(i, j, value)
+		}
+	}
+
+	return grid
+}
+
 func (g Grid) PrintGrid(padding int) {
 
 	for i := 0; i <= g.getMaxY();i++ {
@@ -80,7 +93,8 @@ func (g Grid) PrintGrid(padding int) {
 		for j := 0; j <= g.getMaxX();j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
 			if g[key].Value != nil {
-				fmt.Printf("%" + strconv.Itoa(padding) + "s ", (g[key].Value.(string)))
+				paddingStr := strconv.Itoa(padding)
+				fmt.Printf("%" + paddingStr + "v", (g[key].Value))
 			}
 		}
 	}
