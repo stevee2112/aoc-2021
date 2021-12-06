@@ -22,7 +22,7 @@ func main() {
 	scanner := bufio.NewScanner(input)
 
 	numbers := []string{}
-	boards := []util.Grid{}
+	boards := []*util.Grid{}
 	haveNumbers := false
 	y := 0
 
@@ -37,7 +37,7 @@ func main() {
 
 		if line == "" {
 			// add grid
-			boards = append(boards, util.Grid{})
+			boards = append(boards, &util.Grid{})
 			y = 0
 			continue
 		} else {
@@ -51,11 +51,19 @@ func main() {
 		}
 	}
 
+	part1Found := false
 	part1Answer := 0
+	part2Answer := 0
+	winners := 0;
 
-	check:
 	for _,number := range numbers {
+
 		for _,board := range boards {
+
+			if board == nil {
+				continue
+			}
+
 			board.Traverse(func(coor util.Coordinate) bool {
 				if number == coor.Value {
 					board.SetValue(coor.X, coor.Y, "X")
@@ -65,10 +73,25 @@ func main() {
 			});
 		}
 
-		for _,board := range boards {
-			if checkForWinner(board) {
+		winnersAt := []int{}
+		for i,board := range boards {
+
+			if board == nil {
+				continue
+			}
+
+			if checkForWinner(*board) {
+
+				winnersAt = append(winnersAt, i)
+				winners++
+			}
+		}
+
+		for _,winnerAt := range winnersAt {
+
+			if !part1Found {
 				sum := 0
-				board.Traverse(func(coor util.Coordinate) bool {
+				boards[winnerAt].Traverse(func(coor util.Coordinate) bool {
 					if coor.Value != "X" {
 						intVal,_ := strconv.Atoi(coor.Value.(string))
 						sum += intVal
@@ -79,15 +102,35 @@ func main() {
 
 				numberInt,_ := strconv.Atoi(number)
 				part1Answer = sum * numberInt
-				board.PrintGrid(3)
-				break check
+				part1Found = true
 			}
+
+			currentBoard := boards[winnerAt]
+
+			// remove board
+			boards[winnerAt] = nil
+
+			if winners == len(boards) {
+				sum := 0
+				currentBoard.Traverse(func(coor util.Coordinate) bool {
+					if coor.Value != "X" {
+						intVal,_ := strconv.Atoi(coor.Value.(string))
+						sum += intVal
+					}
+
+					return true;
+				});
+
+				numberInt,_ := strconv.Atoi(number)
+				part2Answer = sum * numberInt
+			}
+
 		}
 	}
 
 
 	fmt.Printf("Part 1: %d\n", part1Answer)
-	fmt.Printf("Part 2: %d\n", 0)
+	fmt.Printf("Part 2: %d\n", part2Answer)
 }
 
 func checkForWinner(board util.Grid) bool {
