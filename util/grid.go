@@ -182,6 +182,32 @@ func (g Grid) GetCols() (cols [][]Coordinate) {
 	return cols;
 }
 
+func (g Grid) GetAdjacent(coor Coordinate) []Coordinate {
+	adjacent := []Coordinate{}
+
+	// Above
+	if coor.Y > 0 {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X, coor.Y - 1))
+	}
+
+	// Right
+	if coor.X < g.getMaxX() {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X + 1, coor.Y))
+	}
+
+	// Below
+	if coor.Y < g.getMaxY() {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X, coor.Y + 1))
+	}
+
+	// Left
+	if coor.X > 0 {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X - 1, coor.Y))
+	}
+
+	return adjacent
+}
+
 func (g Grid) getMinX() int {
 
 	min := 99999999999999 // not great but lazy
