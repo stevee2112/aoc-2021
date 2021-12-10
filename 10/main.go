@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 	"runtime"
-	//"stevee2112/aoc-2021/util"
 	"strings"
+	"sort"
 )
 
 func main() {
@@ -30,34 +30,52 @@ func main() {
 		subsystem = append(subsystem, lineChars)
 	}
 
-	// Part 1
-	sum := 0
-	for _,line := range subsystem {
-		corrupted, incomplete, badChar := checkLine(line)
+	part1Sum := 0
+	part2Sums := []int{}
+	completPoints := map[string]int{
+		")": 1,
+		"]": 2,
+		"}": 3,
+		">": 4,
+	}
 
+	for _,line := range subsystem {
+		corrupted, incomplete, badChar, completeString := checkLine(line)
+
+		// Part 2
 		if incomplete {
+			sum := 0
+			// compute score
+			for _,char := range completeString {
+				sum = (sum * 5) + completPoints[char]
+			}
+
+			part2Sums = append(part2Sums, sum)
 			continue
 		}
 
+		// Part 1
 		if corrupted {
 			switch badChar {
 			case ")":
-				sum += 3
+				part1Sum += 3
 			case "]":
-				sum += 57
+				part1Sum += 57
 			case "}":
-				sum += 1197
+				part1Sum += 1197
 			case ">":
-				sum += 25137
+				part1Sum += 25137
 			}
 		}
 	}
 
-	fmt.Printf("Part 1: %d\n", sum)
-	fmt.Printf("Part 2: %d\n", 0)
+	sort.Ints(part2Sums)
+
+	fmt.Printf("Part 1: %d\n", part1Sum)
+	fmt.Printf("Part 2: %d\n", part2Sums[len(part2Sums) / 2])
 }
 
-func checkLine(line []string) (corrupted bool, incomplete bool, char string) {
+func checkLine(line []string) (corrupted bool, incomplete bool, char string, completeString []string) {
 
 	endStartMap := map[string]string{
 		")": "(",
@@ -66,8 +84,15 @@ func checkLine(line []string) (corrupted bool, incomplete bool, char string) {
 		">": "<",
 	}
 
+	startEndMap := map[string]string{
+		"(": ")",
+		"[": "]",
+		"{": "}",
+		"<": ">",
+	}
+
 	if len(line) < 2 {
-		return false, true, ""
+		return false, true, "", []string{}
 	}
 
 	startStack := []string{line[0]}
@@ -81,7 +106,7 @@ func checkLine(line []string) (corrupted bool, incomplete bool, char string) {
 			startChar := endStartMap[char]
 
 			if startChar != startStack[0] { // corrupted
-				return true, false, char
+				return true, false, char, []string{}
 			}
 
 			// pop stack
@@ -90,8 +115,14 @@ func checkLine(line []string) (corrupted bool, incomplete bool, char string) {
 	}
 
 	if len(startStack) > 0 { // incomplete
-		return false, true, ""
+		completeString := []string{}
+
+		for _,char := range startStack {
+			completeString = append(completeString, startEndMap[char])
+		}
+
+		return false, true, "", completeString
 	}
 
-	return corrupted, incomplete, ""
+	return corrupted, incomplete, "", []string{}
 }
