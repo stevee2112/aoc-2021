@@ -23,21 +23,21 @@ func main() {
 	levels := util.Grid{}
 
 	y := 0
+	octoCount := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		x := 0
 		for _,val := range strings.Split(line,"") {
 			levels.SetValue(x, y, util.Atoi(val))
 			x++
+			octoCount++
 		}
 		y++
 	}
 
-
 	// Part 1
 	flashSum := 0
 	stepCount := 100
-	levels.PrintGrid(2)
 
 	for i := 0; i < stepCount; i++ {
 		new, flashCount := step(levels)
@@ -45,10 +45,20 @@ func main() {
 		flashSum += flashCount
 	}
 
-	levels.PrintGrid(2)
+	// Part 2
+	found := false
+	steps := stepCount // include steps we have done aleady
+	for !found {
+		new, flashCount := step(levels)
+		levels = new
+		steps++
+		if flashCount == octoCount {
+			break
+		}
+	}
 
 	fmt.Printf("Part 1: %d\n", flashSum)
-	fmt.Printf("Part 2: %d\n", 0)
+	fmt.Printf("Part 2: %d\n", steps)
 }
 
 func step(current util.Grid) (util.Grid, int) {
