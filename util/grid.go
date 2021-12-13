@@ -208,6 +208,53 @@ func (g Grid) GetAdjacent(coor Coordinate) []Coordinate {
 	return adjacent
 }
 
+func (g Grid) GetSurrounding(coor Coordinate) []Coordinate {
+	adjacent := []Coordinate{}
+
+	// Above
+	if coor.Y > 0 {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X, coor.Y - 1))
+	}
+
+	// Above left
+	if coor.Y > 0 && coor.X > 0 {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X - 1, coor.Y - 1))
+	}
+
+	// Above right
+	if coor.Y > 0 && coor.X < g.getMaxX() {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X + 1, coor.Y - 1))
+	}
+
+	// Right
+	if coor.X < g.getMaxX() {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X + 1, coor.Y))
+	}
+
+	// Below
+	if coor.Y < g.getMaxY() {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X, coor.Y + 1))
+	}
+
+	// Below left
+	if coor.Y < g.getMaxY() && coor.X > 0 {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X - 1, coor.Y + 1))
+	}
+
+	// Below Right
+	if coor.Y < g.getMaxY() &&  coor.X < g.getMaxX() {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X + 1, coor.Y + 1))
+	}
+
+	// Left
+	if coor.X > 0 {
+		adjacent = append(adjacent, g.GetCoordinate(coor.X - 1, coor.Y))
+	}
+
+	return adjacent
+}
+
+
 func (g Grid) getMinX() int {
 
 	min := 99999999999999 // not great but lazy
