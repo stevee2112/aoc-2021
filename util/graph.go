@@ -68,17 +68,15 @@ func (g Graph) ConnectNodes(aId string, bId string) {
 func (g Graph) Traverse(
 	startAt string,
 	actionFunc func(node GraphNode, path []string) bool,
-	visitedFunc func(node GraphNode, path []string) bool,
+	visitFunc func(node GraphNode, path []string) bool,
 ) {
-	visited := map[string]bool{}
-	g.visit(startAt, actionFunc, visitedFunc, visited, []string{startAt})
+	g.visit(startAt, actionFunc, visitFunc, []string{startAt})
 }
 
 func (g Graph) visit(
 	at string,
 	actionFunc func(node GraphNode, path []string) bool,
-	visitedFunc func(node GraphNode, path []string) bool,
-	visited map[string]bool,
+	visitFunc func(node GraphNode, path []string) bool,
 	path []string,
 ) {
 
@@ -90,21 +88,14 @@ func (g Graph) visit(
 			return
         }
 
-		if visitedFunc(node, path) {
-			visited[at] = true
-		}
-
 		if len(node.Connected) > 0 {
-			for connectedId,_ := range node.Connected {
+			for connectedId,childNode := range node.Connected {
 
-				if _,seen := visited[connectedId]; seen {
-					continue
+				if visitFunc(childNode, path) {
+					g.visit(connectedId, actionFunc, visitFunc, append(path, connectedId))
 				}
 
-				g.visit(connectedId, actionFunc, visitedFunc, visited, append(path, connectedId))
 			}
 		}
-
-		delete(visited, at)
 	}
 }

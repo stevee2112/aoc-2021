@@ -56,14 +56,80 @@ func main() {
 		},
 		func(node util.GraphNode, path []string) bool {
 
-			if strings.ToUpper(node.Id) == node.Id {
+			if node.Id == "start" {
 				return false
-			} else {
-				return true
 			}
+
+			visits := map[string]int{}
+
+			for _,part := range path {
+				visits[part]++
+			}
+
+			if strings.ToUpper(node.Id) != node.Id { // lowercase
+				if visits[node.Id] > 0 {
+					return false
+				}
+			}
+
+			return true // uppercase
+		},
+	);
+
+	// Part 2
+	part2Count := 0
+	graph.Traverse(
+		"start",
+		func(node util.GraphNode, path []string) bool {
+
+			if path[len(path) - 1] == "end" {
+				part2Count++
+				return false
+			}
+
+			return true
+		},
+		func(node util.GraphNode, path []string) bool {
+
+			if node.Id == "start" {
+				return false
+			}
+
+			visits := map[string]int{}
+			hasDoubleVisit := ""
+			tooManyDoubles := false
+
+			for _,part := range path {
+				visits[part]++
+
+				if strings.ToUpper(part) != part { // lowercase
+					if visits[part] > 1 {
+						if visits[part] > 2 {
+							return false
+						}
+
+						if hasDoubleVisit == "" {
+							hasDoubleVisit = part
+						} else {
+							if hasDoubleVisit != part {
+								tooManyDoubles = true
+							}
+						}
+					}
+				}
+
+			}
+
+			if strings.ToUpper(node.Id) != node.Id { // lowercase
+				if tooManyDoubles {
+					return false
+				}
+			}
+
+			return true // uppercase
 		},
 	);
 
 	fmt.Printf("Part 1: %d\n", part1Count)
-	fmt.Printf("Part 2: %d\n", 0)
+	fmt.Printf("Part 2: %d\n", part2Count)
 }
