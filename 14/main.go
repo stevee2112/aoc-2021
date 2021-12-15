@@ -15,14 +15,14 @@ type PolymerTuple struct {
 }
 
 type Polymer struct {
-	Tuples map[string][]PolymerTuple
+	Tuples map[string]int
 	Rules map[string]string
 	Counts map[string]int
 }
 
 func NewPolymer(source string, rules map[string]string) Polymer {
 	polymer := Polymer{}
-	polymer.Tuples = map[string][]PolymerTuple{}
+	polymer.Tuples = map[string]int{}
 	polymer.Rules = rules
 	polymer.Counts = map[string]int{}
 
@@ -41,7 +41,7 @@ func NewPolymer(source string, rules map[string]string) Polymer {
 
 		lastChar = char
 
-		polymer.Tuples[tuple.Tuple] = append(polymer.Tuples[tuple.Tuple], tuple)
+		polymer.Tuples[tuple.Tuple]++
 	}
 
 	return polymer
@@ -49,48 +49,26 @@ func NewPolymer(source string, rules map[string]string) Polymer {
 
 func (p *Polymer) Step(id int) {
 
+	newTuples := map[string]int{}
+	for k,v := range p.Tuples {
+		newTuples[k] = v
+	}
+
 	for source,result := range p.Rules {
 
-		if instances,exists := p.Tuples[source]; exists {
+		if count,exists := p.Tuples[source]; exists {
 
-			skip := []PolymerTuple{}
-			aTuples := []PolymerTuple{}
-			bTuples := []PolymerTuple{}
 			aKey := source[0:1] + result
 			bKey := result + source[1:2]
 
-			for _,tuple := range instances {
-
-				if tuple.Created == id { // created this step skip
-					skip = append(skip, tuple)
-					continue
-				}
-
-				// Add new tuples
-				aTuples = append(aTuples, PolymerTuple{
-					Tuple: aKey,
-					Created: id,
-				})
-
-				bTuples = append(bTuples, PolymerTuple{
-					Tuple: bKey,
-					Created: id,
-				})
-
-				p.Counts[result]++
-			}
-
-			// clear current tuple
-			delete(p.Tuples, source)
-
-			p.Tuples[aKey] = append(p.Tuples[aKey], aTuples...)
-			p.Tuples[bKey] = append(p.Tuples[bKey], bTuples...)
-
-			if len(skip) > 0 {
-				p.Tuples[source] = append(p.Tuples[source], skip...)
-			}
+			newTuples[aKey] += count
+			newTuples[bKey] += count
+			newTuples[source] -= count
+			p.Counts[result] += count
 		}
 	}
+
+	p.Tuples = newTuples
 
 }
 
@@ -153,5 +131,27 @@ func main() {
 	}
 
 	fmt.Printf("Part 1: %d\n", max - min)
-	fmt.Printf("Part 2: %d\n", 0)
+
+	// Part 2
+    steps = 30 // Do 30 more steps
+    for i := 1;i <= steps;i++ {
+		polymer.Step(i)
+    }
+
+	counts = polymer.Counts
+	max = 0
+	min = 0
+
+	for _,val := range counts {
+		if max == 0 || val > max {
+			max = val
+		}
+
+		if min == 0 || val < min {
+			min = val
+		}
+	}
+
+
+	fmt.Printf("Part 2: %d\n", max - min)
 }
