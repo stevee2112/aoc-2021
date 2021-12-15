@@ -9,57 +9,89 @@ import (
 	"strings"
 )
 
+type PolymerTuple struct {
+	Tuple string
+	Created int
+}
+
 type Polymer struct {
-	Source []string
+	Tuples map[string][]PolymerTuple
 	Rules map[string]string
 	Counts map[string]int
 }
 
 func NewPolymer(source string, rules map[string]string) Polymer {
 	polymer := Polymer{}
-	polymer.Source = strings.Split(source, "")
+	polymer.Tuples = map[string][]PolymerTuple{}
 	polymer.Rules = rules
 	polymer.Counts = map[string]int{}
+
+	lastChar := ""
+	for _,char := range strings.Split(source, "") {
+		polymer.Counts[char]++
+		if lastChar == "" {
+			lastChar = char
+			continue
+		}
+
+		tuple := PolymerTuple{
+			Tuple: lastChar + char,
+			Created: 0,
+		}
+
+		lastChar = char
+
+		polymer.Tuples[tuple.Tuple] = append(polymer.Tuples[tuple.Tuple], tuple)
+	}
 
 	return polymer
 }
 
-func (p Polymer) String() string {
-	return strings.Join(p.Source,"")
-}
+func (p *Polymer) Step(id int) {
 
-func (p *Polymer) Step() {
+	for source,result := range p.Rules {
 
-	p.Counts = map[string]int{}
-	at := 0
-	done := false
-	for !done {
+		if instances,exists := p.Tuples[source]; exists {
 
-		tuple := p.Source[at] + p.Source[at + 1]
+			skip := []PolymerTuple{}
+			aTuples := []PolymerTuple{}
+			bTuples := []PolymerTuple{}
+			aKey := source[0:1] + result
+			bKey := result + source[1:2]
 
-		p.Counts[p.Source[at]]++
+			for _,tuple := range instances {
 
-		if ele,exists := p.Rules[tuple]; exists {
+				if tuple.Created == id { // created this step skip
+					skip = append(skip, tuple)
+					continue
+				}
 
-			insert := at + 1
-			p.Source = append(p.Source, "")
-			copy(p.Source[(insert+1):], p.Source[insert:])
-			p.Source[insert] = ele
+				// Add new tuples
+				aTuples = append(aTuples, PolymerTuple{
+					Tuple: aKey,
+					Created: id,
+				})
 
-			p.Counts[ele]++
+				bTuples = append(bTuples, PolymerTuple{
+					Tuple: bKey,
+					Created: id,
+				})
 
-			at = at + 2
-		} else {
-			at++
-		}
+				p.Counts[result]++
+			}
 
-		if at >= len(p.Source) - 1 {
+			// clear current tuple
+			delete(p.Tuples, source)
 
-			// add last char
-			p.Counts[p.Source[len(p.Source) - 1]]++
-			done = true
+			p.Tuples[aKey] = append(p.Tuples[aKey], aTuples...)
+			p.Tuples[bKey] = append(p.Tuples[bKey], bTuples...)
+
+			if len(skip) > 0 {
+				p.Tuples[source] = append(p.Tuples[source], skip...)
+			}
 		}
 	}
+
 }
 
 func main() {
@@ -100,11 +132,11 @@ func main() {
 		rules,
 	)
 
-	// Part 1
-	steps := 10
-	for i := 0;i < steps;i++ {
-		polymer.Step()
-	}
+    // Part 1
+    steps := 10
+    for i := 1;i <= steps;i++ {
+		polymer.Step(i)
+    }
 
 	counts := polymer.Counts
 	max := 0
