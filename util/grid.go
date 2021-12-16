@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"strconv"
+	"sort"
 )
 
 type DirectedGraph struct {
@@ -25,7 +26,7 @@ func (dg *DirectedGraph) At() Coordinate {
 }
 
 func (dg *DirectedGraph) SetCoordinate(coordinate Coordinate) *DirectedGraph {
-	dg.Map[coordinate.String()] = coordinate
+	dg.Map.grid[coordinate.String()] = coordinate
 	dg.Visits[coordinate.String()]++
 
 	return dg
@@ -33,7 +34,8 @@ func (dg *DirectedGraph) SetCoordinate(coordinate Coordinate) *DirectedGraph {
 
 func (dg *DirectedGraph) Move(direction Direction) *DirectedGraph {
 
-	delete(dg.Map, dg.at.String())
+	// TODO may want to update min and max here
+	delete(dg.Map.grid, dg.at.String())
 	switch (direction) {
 	case North:
 		dg.at.Y++
@@ -52,7 +54,7 @@ func (dg *DirectedGraph) Move(direction Direction) *DirectedGraph {
 
 func NewDirectedGraph (value interface{}) (*DirectedGraph) {
 	dg := DirectedGraph{
-		Map: Grid{},
+		Map: Grid{grid: map[string]Coordinate{}},
 		at: Coordinate{0, 0, value},
 		Visits: map[string]int{},
 	}
@@ -62,15 +64,47 @@ func NewDirectedGraph (value interface{}) (*DirectedGraph) {
 	return &dg
 }
 
-type Grid map[string]Coordinate
+type Grid struct{
+	grid map[string]Coordinate
+	MaxX int
+	MaxY int
+	MinX int
+	MinY int
 
-func (g Grid) SetValue(x int, y int, value interface{}) {
+}
+
+func (g *Grid) SetCoordinate(coor Coordinate, value interface{}) {
+	g.SetValue(coor.X, coor.Y, value)
+}
+
+func (g *Grid) SetValue(x int, y int, value interface{}) {
+
+	if g.grid == nil {
+		g.grid = map[string]Coordinate{}
+	}
+
 	coordinate := Coordinate{x, y, value}
-	g[coordinate.String()] = coordinate
+	g.grid[coordinate.String()] = coordinate
+
+	if x > g.MaxX || g.MaxX == 0 {
+		g.MaxX = x
+	}
+
+	if y > g.MaxY || g.MaxY == 0 {
+		g.MaxY = y
+	}
+
+	if x < g.MinX || g.MinX == 0 {
+		g.MinX = x
+	}
+
+	if y < g.MinY || g.MinY == 0 {
+		g.MinY = y
+	}
 }
 
 func (g Grid) GetCoordinate(x int, y int) Coordinate {
-	return g[fmt.Sprintf("%d,%d", x, y)]
+	return g.grid[fmt.Sprintf("%d,%d", x, y)]
 }
 
 func MakeFullGrid(x int, y int, value interface{}) (Grid) {
@@ -98,8 +132,8 @@ func MergeGrids(a Grid, b Grid) Grid {
 	for i := 0; i <= aMaxY;i++ {
 		for j := 0; j <= aMaxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			if a[key].Value != nil {
-				newGrid.SetValue(j, i, a[key].Value)
+			if a.grid[key].Value != nil {
+				newGrid.SetValue(j, i, a.grid[key].Value)
 			} else {
 				newGrid.SetValue(j, i, nil)
 			}
@@ -109,8 +143,8 @@ func MergeGrids(a Grid, b Grid) Grid {
 	for i := 0; i <= bMaxY;i++ {
 		for j := 0; j <= bMaxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			if b[key].Value != nil {
-				newGrid.SetValue(j, i, b[key].Value)
+			if b.grid[key].Value != nil {
+				newGrid.SetValue(j, i, b.grid[key].Value)
 			}
 		}
 	}
@@ -126,7 +160,7 @@ func (g Grid) FillGrid(value interface{}) {
 	for i := 0; i <= maxY;i++ {
 		for j := 0; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			if g[key].Value == nil {
+			if g.grid[key].Value == nil {
 				g.SetValue(j, i, value)
 			}
 		}
@@ -144,7 +178,7 @@ func (g Grid) FlipVertically() {
 	for i := maxY; i >= 0;i-- {
 		for j := 0; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			g.SetValue(j, maxY - i, newGrid[key].Value)
+			g.SetValue(j, maxY - i, newGrid.grid[key].Value)
 		}
 	}
 }
@@ -160,7 +194,7 @@ func (g Grid) FlipHorzontially() {
 	for i := 0; i <= maxY;i++ {
 		for j := maxX; j >= 0;j-- {
 			key := fmt.Sprintf("%d,%d", j, i)
-			g.SetValue(maxX - j, i, newGrid[key].Value)
+			g.SetValue(maxX - j, i, newGrid.grid[key].Value)
 		}
 	}
 }
@@ -172,7 +206,7 @@ func (g Grid) Subset(minX int, maxX int, minY int, maxY int) Grid {
 	for i := minY; i <= maxY;i++ {
 		for j := minX; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			newGrid.SetValue(Abs(minX - j), Abs(minY - i), g[key].Value)
+			newGrid.SetValue(Abs(minX - j), Abs(minY - i), g.grid[key].Value)
 		}
 	}
 
@@ -187,9 +221,14 @@ func (g Grid) Clear() {
 	for i := 0; i <= maxY;i++ {
 		for j := 0; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			delete(g, key)
+			delete(g.grid, key)
 		}
 	}
+
+	g.MaxX = 0
+	g.MinX = 0
+	g.MaxY = 0
+	g.MinY = 0
 }
 
 func (g Grid) Clone() Grid {
@@ -202,7 +241,7 @@ func (g Grid) Clone() Grid {
 	for i := 0; i <= maxY;i++ {
 		for j := 0; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			newGrid.SetValue(j, i, g[key].Value)
+			newGrid.SetValue(j, i, g.grid[key].Value)
 		}
 	}
 
@@ -218,9 +257,9 @@ func (g Grid) PrintGrid(padding int) {
 		fmt.Println("")
 		for j := 0; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
-			if g[key].Value != nil {
+			if g.grid[key].Value != nil {
 				paddingStr := strconv.Itoa(padding)
-				fmt.Printf("%" + paddingStr + "v", (g[key].Value))
+				fmt.Printf("%" + paddingStr + "v", (g.grid[key].Value))
 			}
 		}
 	}
@@ -229,7 +268,7 @@ func (g Grid) PrintGrid(padding int) {
 }
 
 func (g Grid) Traverse(action func(coor Coordinate) bool) {
-	for _,coordinate := range g {
+	for _,coordinate := range g.grid {
 		if !action(coordinate) { // stop if false
 			return
 		}
@@ -311,7 +350,7 @@ func (g Grid) GetCols() (cols [][]Coordinate) {
 func (g Grid) GetAdjacent(coor Coordinate) []Coordinate {
 	adjacent := []Coordinate{}
 
-	// Above
+	// // Above
 	if coor.Y > 0 {
 		adjacent = append(adjacent, g.GetCoordinate(coor.X, coor.Y - 1))
 	}
@@ -326,7 +365,7 @@ func (g Grid) GetAdjacent(coor Coordinate) []Coordinate {
 		adjacent = append(adjacent, g.GetCoordinate(coor.X, coor.Y + 1))
 	}
 
-	// Left
+	// // Left
 	if coor.X > 0 {
 		adjacent = append(adjacent, g.GetCoordinate(coor.X - 1, coor.Y))
 	}
@@ -382,55 +421,19 @@ func (g Grid) GetSurrounding(coor Coordinate) []Coordinate {
 
 
 func (g Grid) getMinX() int {
-
-	min := 99999999999999 // not great but lazy
-
-	for _,coor := range g {
-		if coor.X < min {
-			min = coor.X
-		}
-	}
-
-	return min
+	return g.MinX
 }
 
 func (g Grid) getMaxX() int {
-
-	max := -99999999999999 // not great but lazy
-
-	for _,coor := range g {
-		if coor.X > max {
-			max = coor.X
-		}
-	}
-
-	return max
+	return g.MaxX
 }
 
 func (g Grid) getMinY() int {
-
-	min := 99999999999999 // not great but lazy
-
-	for _,coor := range g {
-		if coor.Y < min {
-			min = coor.Y
-		}
-	}
-
-	return min
+	return g.MinY
 }
 
 func (g Grid) getMaxY() int {
-
-	max := -999999999 // not great but lazy
-
-	for _,coor := range g {
-		if coor.Y > max {
-			max = coor.Y
-		}
-	}
-
-	return max
+	return g.MaxY
 }
 
 func (g Grid) GetMaxX() int {
@@ -449,7 +452,166 @@ func (g Grid) GetMaxY() int {
 	return g.getMaxY()
 }
 
+func (g *Grid) GetPathsToDestination(
+	src Coordinate,
+	dest Coordinate,
+	atFunc func(paths []Coordinate) bool,
+	foundFunc func(paths []Coordinate) bool,
+) {
+	visited := map[string]bool{}
+	path := []Coordinate{}
+	g.getPathsToDestination(src,dest, visited, path, atFunc, foundFunc)
+}
 
+func (g *Grid) getPathsToDestination(
+	src Coordinate,
+	dest Coordinate,
+	visited map[string]bool,
+	paths []Coordinate,
+	atFunc func(paths []Coordinate) bool,
+	foundFunc func(paths []Coordinate) bool,
+) bool {
+
+
+	paths = append(paths, src)
+
+	visited[src.String()] = true
+
+	if !atFunc(paths) {
+		return false
+	}
+
+	if src.String() == dest.String() { // found
+
+		if !foundFunc(paths) {
+			return false
+		}
+	}
+
+    for _,newCoor := range g.GetAdjacent(src) {
+		fmt.Println("here")
+
+		if _,seen := visited[newCoor.String()]; seen {
+			continue
+		}
+
+		newVisited := map[string]bool{}
+		for k,v := range visited {
+		  newVisited[k] = v
+		}
+		newVisited[newCoor.String()] = true
+
+		if !g.getPathsToDestination(newCoor, dest, newVisited, paths, atFunc, foundFunc) {
+			continue
+		}
+	}
+
+	return false
+}
+
+var globalMin = 0
+
+func (g *Grid) Frontier(start Coordinate, frontierFunc func(at Coordinate, parent Coordinate, frontier Grid) (bool, interface{})) Grid {
+
+	frontier := MakeFullGrid(g.GetMaxX(), g.GetMaxY(), nil)
+
+	open := []Coordinate{}
+
+	//Add start
+	frontier.SetCoordinate(start, 0)
+	open = append(open, frontier.GetCoordinate(start.X, start.Y))
+
+	for len(open) > 0 {
+
+		// Get current node of top of open list
+		current := open[0]
+		current = frontier.GetCoordinate(current.X, current.Y)
+		open = open[1:]
+
+		adj := frontier.GetAdjacent(current)
+
+		for _,coor := range adj {
+
+			inOpenList := false
+
+			// if coor is not nil and not in open list ignore it, closed list
+			if coor.Value != nil {
+				for _,inOpen := range open {
+					if coor.String() == inOpen.String() {
+						inOpenList = true
+						break
+					}
+				}
+
+				if !inOpenList {
+					continue
+				}
+			} else {
+				// add to open set
+				open = append(open, frontier.GetCoordinate(coor.X, coor.Y))
+
+			}
+
+			// compute sum value
+			orig := g.GetCoordinate(coor.X, coor.Y)
+
+			set, sum := frontierFunc(orig, current, frontier)
+
+			if set {
+				frontier.SetCoordinate(coor, sum)
+			}
+		}
+	}
+
+	return frontier
+}
+
+func (g *Grid) PathSums(
+	src Coordinate,
+	dest Coordinate,
+	visited map[string]bool,
+	sum int,
+	path []Coordinate,
+) (bool, int) {
+
+	if sum >= globalMin && globalMin != 0 {
+		return false, 0
+	}
+
+	if src.String() == dest.String() { // found
+
+		if sum < globalMin || globalMin == 0 {
+			globalMin = sum
+		}
+
+		fmt.Println(src, "found", globalMin, sum, path)
+		return true,sum
+	}
+
+	visited[src.String()] = true
+	// newVisited := map[string]bool{}
+	// for k,v := range visited {
+	//   newVisited[k] = v
+	// }
+
+	// newVisited[src.String()] = true
+
+	adj := g.GetAdjacent(src)
+	sort.Sort(CoordinatesByInt(adj))
+
+    for _,newCoor := range adj {
+
+		if _,seen := visited[newCoor.String()]; seen {
+			continue
+		}
+
+		_,_ = g.PathSums(newCoor,dest,visited,sum + newCoor.Value.(int), append(path, newCoor))
+	}
+
+	delete(visited, src.String())
+
+	return true, 0
+}
 
 type Coordinate struct {
 	X int
@@ -460,3 +622,20 @@ type Coordinate struct {
 func (c Coordinate) String() string {
 	return fmt.Sprintf("%d,%d", c.X, c.Y)
 }
+
+type Coordinates []Coordinate
+
+func (c Coordinates) String() string {
+	out := ""
+	for _,coor := range c {
+		out += coor.String()
+	}
+
+	return out
+}
+
+type CoordinatesByInt []Coordinate
+
+func (c CoordinatesByInt) Len() int           { return len(c) }
+func (c CoordinatesByInt) Less(i, j int) bool { return c[i].Value.(int) < c[j].Value.(int) }
+func (c CoordinatesByInt) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
