@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"strconv"
-	"sort"
 )
 
 type DirectedGraph struct {
@@ -94,11 +93,11 @@ func (g *Grid) SetValue(x int, y int, value interface{}) {
 		g.MaxY = y
 	}
 
-	if x < g.MinX || g.MinX == 0 {
+	if x < g.MinX {
 		g.MinX = x
 	}
 
-	if y < g.MinY || g.MinY == 0 {
+	if y < g.MinY {
 		g.MinY = y
 	}
 }
@@ -149,6 +148,69 @@ func MergeGrids(a Grid, b Grid) Grid {
 		}
 	}
 
+	return newGrid
+}
+
+func AppendHorizontal(a Grid, b Grid) Grid {
+
+	newGrid := Grid{}
+
+	aMaxY := a.getMaxY()
+	aMaxX := a.getMaxX()
+	bMaxY := b.getMaxY()
+	bMaxX := b.getMaxX()
+
+	for i := 0; i <= aMaxY;i++ {
+		for j := 0; j <= aMaxX;j++ {
+			key := fmt.Sprintf("%d,%d", j, i)
+			newGrid.SetValue(j, i, a.grid[key].Value)
+		}
+	}
+
+	for i := 0; i <= bMaxY;i++ {
+		for j := 0; j <= bMaxX;j++ {
+			key := fmt.Sprintf("%d,%d", j, i)
+			// Should fix this
+			adder := 1
+			if aMaxX == 0 {
+				adder = 0
+			}
+			newGrid.SetValue(j + aMaxX + adder, i, b.grid[key].Value)
+		}
+	}
+
+	return newGrid
+}
+
+func AppendVertical(a Grid, b Grid) Grid {
+
+	newGrid := Grid{}
+
+	aMaxY := a.getMaxY()
+	aMaxX := a.getMaxX()
+	bMaxY := b.getMaxY()
+	bMaxX := b.getMaxX()
+
+
+	for i := 0; i <= aMaxY;i++ {
+		for j := 0; j <= aMaxX;j++ {
+			key := fmt.Sprintf("%d,%d", j, i)
+			newGrid.SetValue(j, i, a.grid[key].Value)
+		}
+	}
+
+	for i := 0; i <= bMaxY;i++ {
+		for j := 0; j <= bMaxX;j++ {
+			key := fmt.Sprintf("%d,%d", j, i)
+			// Should fix this
+			adder := 1
+			if aMaxY == 0 {
+				adder = 0
+			}
+				newGrid.SetValue(j, i + aMaxY + adder, b.grid[key].Value)
+		}
+	}
+ 
 	return newGrid
 }
 
@@ -452,66 +514,34 @@ func (g Grid) GetMaxY() int {
 	return g.getMaxY()
 }
 
-func (g *Grid) GetPathsToDestination(
-	src Coordinate,
-	dest Coordinate,
-	atFunc func(paths []Coordinate) bool,
-	foundFunc func(paths []Coordinate) bool,
-) {
-	visited := map[string]bool{}
+func GetShortestPath(frontier Grid, start Coordinate, end Coordinate) []Coordinate {
 	path := []Coordinate{}
-	g.getPathsToDestination(src,dest, visited, path, atFunc, foundFunc)
+
+	at := end
+	found := false
+	min := end.Value.(int)
+
+	for !found {
+		path = append(path, at)
+		if at.String() == start.String() {
+			found = true
+			break
+		}
+
+		adj := frontier.GetAdjacent(at)
+
+		for _,coor := range adj {
+			if coor.Value.(int) <= min {
+				at = coor
+				min = coor.Value.(int)
+			}
+		}
+	}
+
+	return path
 }
 
-func (g *Grid) getPathsToDestination(
-	src Coordinate,
-	dest Coordinate,
-	visited map[string]bool,
-	paths []Coordinate,
-	atFunc func(paths []Coordinate) bool,
-	foundFunc func(paths []Coordinate) bool,
-) bool {
-
-
-	paths = append(paths, src)
-
-	visited[src.String()] = true
-
-	if !atFunc(paths) {
-		return false
-	}
-
-	if src.String() == dest.String() { // found
-
-		if !foundFunc(paths) {
-			return false
-		}
-	}
-
-    for _,newCoor := range g.GetAdjacent(src) {
-		fmt.Println("here")
-
-		if _,seen := visited[newCoor.String()]; seen {
-			continue
-		}
-
-		newVisited := map[string]bool{}
-		for k,v := range visited {
-		  newVisited[k] = v
-		}
-		newVisited[newCoor.String()] = true
-
-		if !g.getPathsToDestination(newCoor, dest, newVisited, paths, atFunc, foundFunc) {
-			continue
-		}
-	}
-
-	return false
-}
-
-var globalMin = 0
-
-func (g *Grid) Frontier(start Coordinate, frontierFunc func(at Coordinate, parent Coordinate, frontier Grid) (bool, interface{})) Grid {
+func (g *Grid) Frontier(start Coordinate, end Coordinate, frontierFunc func(at Coordinate, parent Coordinate, frontier Grid) (bool, interface{})) Grid {
 
 	frontier := MakeFullGrid(g.GetMaxX(), g.GetMaxY(), nil)
 
@@ -524,6 +554,7 @@ func (g *Grid) Frontier(start Coordinate, frontierFunc func(at Coordinate, paren
 	for len(open) > 0 {
 
 		// Get current node of top of open list
+		// THIS COULD BE WAY FASTER / BETTER WITH A PRIORITY QUEUE
 		current := open[0]
 		current = frontier.GetCoordinate(current.X, current.Y)
 		open = open[1:]
@@ -534,22 +565,11 @@ func (g *Grid) Frontier(start Coordinate, frontierFunc func(at Coordinate, paren
 
 			inOpenList := false
 
-			// if coor is not nil and not in open list ignore it, closed list
-			if coor.Value != nil {
-				for _,inOpen := range open {
-					if coor.String() == inOpen.String() {
-						inOpenList = true
-						break
-					}
+			for _,inOpen := range open {
+				if coor.String() == inOpen.String() {
+					inOpenList = true
+					break
 				}
-
-				if !inOpenList {
-					continue
-				}
-			} else {
-				// add to open set
-				open = append(open, frontier.GetCoordinate(coor.X, coor.Y))
-
 			}
 
 			// compute sum value
@@ -559,6 +579,14 @@ func (g *Grid) Frontier(start Coordinate, frontierFunc func(at Coordinate, paren
 
 			if set {
 				frontier.SetCoordinate(coor, sum)
+
+				if !inOpenList {
+					open = append(open, frontier.GetCoordinate(coor.X, coor.Y))
+				}
+			} else {
+				if !inOpenList {
+					continue
+				}
 			}
 		}
 	}
@@ -566,51 +594,8 @@ func (g *Grid) Frontier(start Coordinate, frontierFunc func(at Coordinate, paren
 	return frontier
 }
 
-func (g *Grid) PathSums(
-	src Coordinate,
-	dest Coordinate,
-	visited map[string]bool,
-	sum int,
-	path []Coordinate,
-) (bool, int) {
-
-	if sum >= globalMin && globalMin != 0 {
-		return false, 0
-	}
-
-	if src.String() == dest.String() { // found
-
-		if sum < globalMin || globalMin == 0 {
-			globalMin = sum
-		}
-
-		fmt.Println(src, "found", globalMin, sum, path)
-		return true,sum
-	}
-
-	visited[src.String()] = true
-	// newVisited := map[string]bool{}
-	// for k,v := range visited {
-	//   newVisited[k] = v
-	// }
-
-	// newVisited[src.String()] = true
-
-	adj := g.GetAdjacent(src)
-	sort.Sort(CoordinatesByInt(adj))
-
-    for _,newCoor := range adj {
-
-		if _,seen := visited[newCoor.String()]; seen {
-			continue
-		}
-
-		_,_ = g.PathSums(newCoor,dest,visited,sum + newCoor.Value.(int), append(path, newCoor))
-	}
-
-	delete(visited, src.String())
-
-	return true, 0
+func remove(slice []Coordinate, s int) []Coordinate {
+    return append(slice[:s], slice[s+1:]...)
 }
 
 type Coordinate struct {

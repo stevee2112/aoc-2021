@@ -35,6 +35,58 @@ func main() {
 
 	frontier := riskMap.Frontier(
 		riskMap.GetCoordinate(0,0),
+		riskMap.GetCoordinate(riskMap.GetMaxX(), riskMap.GetMaxY()),
+		func (at util.Coordinate, parent util.Coordinate, frontier util.Grid) (bool, interface{}) {
+			sum :=  at.Value.(int) + parent.Value.(int)
+
+			currentValue := frontier.GetCoordinate(at.X, at.Y)
+
+			if currentValue.Value == nil || sum < currentValue.Value.(int) {
+				return true, sum
+			}
+
+			return false, 0
+		},
+	)
+
+	part1 := frontier.GetCoordinate(frontier.GetMaxX(), frontier.GetMaxY()).Value.(int)
+
+	largeRiskMap := util.Grid{}
+
+	for i := 0; i < 5; i++ {
+
+		clone := riskMap.Clone()
+		clone.Traverse(func(coor util.Coordinate) bool {
+			newVal := (coor.Value.(int) + i)
+			if newVal > 9 {
+				newVal = newVal % 9
+			}
+			clone.SetValue(coor.X, coor.Y, newVal)
+			return true
+		});
+
+		newRow := util.Grid{}
+		for j := 0; j < 5; j++ {
+			clone2 := clone.Clone()
+			clone2.Traverse(func(coor util.Coordinate) bool {
+				newVal := (coor.Value.(int) + j)
+				if newVal > 9 {
+					newVal = newVal % 9
+				}
+				clone2.SetValue(coor.X, coor.Y, newVal)
+				return true
+			});
+
+			newRow = util.AppendHorizontal(newRow, clone2)
+
+		}
+
+		largeRiskMap = util.AppendVertical(largeRiskMap, newRow)
+	}
+
+	largeFrontier := largeRiskMap.Frontier(
+		largeRiskMap.GetCoordinate(0,0),
+		largeRiskMap.GetCoordinate(largeRiskMap.GetMaxX(), largeRiskMap.GetMaxY()),
 		func (at util.Coordinate, parent util.Coordinate, frontier util.Grid) (bool, interface{}) {
 			sum :=  at.Value.(int) + parent.Value.(int)
 
@@ -46,8 +98,9 @@ func main() {
 			return false, 0
 		},
 	)
-	part1 := frontier.GetCoordinate(frontier.GetMaxX(), frontier.GetMaxY()).Value.(int)
+
+	part2 := largeFrontier.GetCoordinate(largeFrontier.GetMaxX(), largeFrontier.GetMaxY()).Value.(int)
 
 	fmt.Printf("Part 1: %d\n", part1)
-	fmt.Printf("Part 2: %d\n", 0)
+	fmt.Printf("Part 2: %d\n", part2)
 }
