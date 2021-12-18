@@ -80,16 +80,21 @@ func (g *Grid) SetValue(x int, y int, value interface{}) {
 
 	if g.grid == nil {
 		g.grid = map[string]Coordinate{}
+		g.MinX = 999999999999999
+		g.MaxX = -999999999999999
+		g.MinY = 999999999999999
+		g.MaxY = -99999999999999
+
 	}
 
 	coordinate := Coordinate{x, y, value}
 	g.grid[coordinate.String()] = coordinate
 
-	if x > g.MaxX || g.MaxX == 0 {
+	if x > g.MaxX {
 		g.MaxX = x
 	}
 
-	if y > g.MaxY || g.MaxY == 0 {
+	if y > g.MaxY {
 		g.MaxY = y
 	}
 
@@ -216,11 +221,13 @@ func AppendVertical(a Grid, b Grid) Grid {
 
 func (g Grid) FillGrid(value interface{}) {
 
+	minY := g.getMinY()
 	maxY := g.getMaxY()
+	minX := g.getMinX()
 	maxX := g.getMaxX()
 
-	for i := 0; i <= maxY;i++ {
-		for j := 0; j <= maxX;j++ {
+	for i := minY; i <= maxY;i++ {
+		for j := minX; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
 			if g.grid[key].Value == nil {
 				g.SetValue(j, i, value)
@@ -229,32 +236,36 @@ func (g Grid) FillGrid(value interface{}) {
 	}
 }
 
-func (g Grid) FlipVertically() {
+func (g *Grid) FlipVertically() {
 
 	newGrid := g.Clone()
 	g.Clear()
 
+	minY := newGrid.getMinY()
 	maxY := newGrid.getMaxY()
+	minX := newGrid.getMinX()
 	maxX := newGrid.getMaxX()
 
-	for i := maxY; i >= 0;i-- {
-		for j := 0; j <= maxX;j++ {
+	for i := maxY; i >= minY;i-- {
+		for j := minX; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
 			g.SetValue(j, maxY - i, newGrid.grid[key].Value)
 		}
 	}
 }
 
-func (g Grid) FlipHorzontially() {
+func (g *Grid) FlipHorzontially() {
 
 	newGrid := g.Clone()
 	g.Clear()
 
+	minY := newGrid.getMinY()
 	maxY := newGrid.getMaxY()
+	minX := newGrid.getMinX()
 	maxX := newGrid.getMaxX()
 
-	for i := 0; i <= maxY;i++ {
-		for j := maxX; j >= 0;j-- {
+	for i := minY; i <= maxY;i++ {
+		for j := maxX; j >= minX;j-- {
 			key := fmt.Sprintf("%d,%d", j, i)
 			g.SetValue(maxX - j, i, newGrid.grid[key].Value)
 		}
@@ -275,33 +286,25 @@ func (g Grid) Subset(minX int, maxX int, minY int, maxY int) Grid {
 	return newGrid
 }
 
-func (g Grid) Clear() {
-
-	maxY := g.getMaxY()
-	maxX := g.getMaxX()
-
-	for i := 0; i <= maxY;i++ {
-		for j := 0; j <= maxX;j++ {
-			key := fmt.Sprintf("%d,%d", j, i)
-			delete(g.grid, key)
-		}
-	}
-
-	g.MaxX = 0
-	g.MinX = 0
-	g.MaxY = 0
-	g.MinY = 0
+func (g *Grid) Clear() {
+	g.MinX = 999999999999999
+	g.MaxX = -999999999999999
+	g.MinY = 999999999999999
+	g.MaxY = -99999999999999
+	g.grid = nil
 }
 
 func (g Grid) Clone() Grid {
 
 	newGrid := Grid{}
 
+	minY := g.getMinY()
 	maxY := g.getMaxY()
+	minX := g.getMinX()
 	maxX := g.getMaxX()
 
-	for i := 0; i <= maxY;i++ {
-		for j := 0; j <= maxX;j++ {
+	for i := minY; i <= maxY;i++ {
+		for j := minX; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
 			newGrid.SetValue(j, i, g.grid[key].Value)
 		}
@@ -312,12 +315,14 @@ func (g Grid) Clone() Grid {
 
 func (g Grid) PrintGrid(padding int) {
 
+	minY := g.getMinY()
 	maxY := g.getMaxY()
+	minX := g.getMinX()
 	maxX := g.getMaxX()
 
-	for i := 0; i <= maxY;i++ {
+	for i := minY; i <= maxY;i++ {
 		fmt.Println("")
-		for j := 0; j <= maxX;j++ {
+		for j := minX; j <= maxX;j++ {
 			key := fmt.Sprintf("%d,%d", j, i)
 			if g.grid[key].Value != nil {
 				paddingStr := strconv.Itoa(padding)
