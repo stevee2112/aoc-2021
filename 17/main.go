@@ -16,13 +16,14 @@ func main() {
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/example")
+	input, _ := os.Open(path.Dir(file) + "/input")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
 
 	ocean := util.Grid{}
 
+	var minX, maxX, minY, maxY int
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -31,10 +32,10 @@ func main() {
 		xParts := strings.Split(parts[2][2:], "..")
 		yParts := strings.Split(parts[3][2:], "..")
 
-		minX := util.Atoi(xParts[0])
-		maxX := util.Atoi(xParts[1])
-		minY := util.Atoi(yParts[0])
-		maxY := util.Atoi(yParts[1])
+		minX = util.Atoi(xParts[0])
+		maxX = util.Atoi(xParts[1])
+		minY = util.Atoi(yParts[0])
+		maxY = util.Atoi(yParts[1])
 
 		// Add Trench
 		for i := minY; i <= maxY; i++ {
@@ -47,31 +48,51 @@ func main() {
 	// Set sub
 	ocean.SetValue(0,0, "S")
 
-	// TODO compute best velocity
+	maxYhit := 0
 
-	// Fire
-	at := ocean.GetCoordinate(0,0)
-	xVel := 6
-	yVel := 9
+	// try
+	hits := 0
+	iteration := 0
+	for y := ocean.GetMinY();y <= util.Abs(ocean.GetMinY());y++ {
+		for x := 0;x <= ocean.GetMaxX();x++ {
+			try := ocean.Clone()
+			at := try.GetCoordinate(0,0)
+			xVel := x
+			yVel := y
 
-	steps := 20
+			hit := false
 
-	// TODO know when to stop
-	for i := 0;i < steps; i++ {
-		at,xVel,yVel = updateProbe(at, xVel, yVel)
-		ocean.SetCoordinate(at, at.Value)
+			for {
+				at,xVel,yVel = updateProbe(at, xVel, yVel)
+				try.SetCoordinate(at, at.Value)
+
+				if at.X >= minX && at.X <= maxX && at.Y >= minY && at.Y <= maxY {
+					hit = true
+					break
+				}
+
+				if at.X > maxX || at.Y < minY {
+					break
+				}
+			}
+
+			if hit {
+				hits++
+				if try.GetMaxY() > maxYhit {
+					maxYhit = try.GetMaxY()
+				}
+
+				// try.FlipVertically()
+				// try.FillGrid(".")
+				// try.PrintGrid(0)
+			}
+
+			iteration++
+		}
 	}
 
-	// TODO // this will be the max height value
-	//fmt.Println(ocean.GetMaxY())
-
-
-	ocean.FlipVertically()
-	ocean.FillGrid(".")
-	ocean.PrintGrid(0)
-
-	fmt.Printf("Part 1: %d\n", 0)
-	fmt.Printf("Part 2: %d\n", 0)
+	fmt.Printf("Part 1: %d\n", maxYhit)
+	fmt.Printf("Part 2: %d\n", hits)
 }
 
 func updateProbe(at util.Coordinate, xVel int, yVel int) (util.Coordinate, int, int) {
