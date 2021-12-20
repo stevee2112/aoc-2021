@@ -33,18 +33,38 @@ func main() {
 		//_ := scanner.Text()
 	}
 
-	pairStr := "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]"
-	//pairStr := "[1,[[3,[2,[1,[7,3]]]],[6,1]]]" // TODO THIS IS NOT WORKING
-	// need to better handle getting left and right.  I think the better way
-	// is to traverse like the print function which is seeing nodes in order
-	// then when we match getting the previous, and next.
+	// TODO THIS EXAMPLE IS WRONG SPLIT ORDER IS WRONG
+	pairStr1 := "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]" 
+	pair1 := parsePair(pairStr1)
 
-	pair := parsePair(pairStr)
+	pairStr2 := "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"
+	pair2 := parsePair(pairStr2)
 
-	fmt.Println(printPair(pair))
-	fmt.Println(explode(pair))
-	fmt.Println(explode(pair))
-	fmt.Println(printPair(pair))
+	fmt.Println(printPair(pair1))
+	fmt.Println(printPair(pair2))
+
+	pair := addPairs(pair1, pair2)
+
+	fmt.Println("original\t", printPair(pair))
+	for {
+		exploded :=explode(pair)
+
+		if exploded {
+			fmt.Println("explode\t\t", printPair(pair))
+			continue
+		}
+
+		splited :=split(pair)
+
+		if splited {
+			fmt.Println("split\t\t", printPair(pair))
+			continue
+		}
+
+		break
+	}
+
+	fmt.Println("final\t\t", printPair(pair))
 
 	fmt.Printf("Part 1: %d\n", 0)
 	fmt.Printf("Part 2: %d\n", 0)
@@ -101,10 +121,54 @@ func getFirstDepth4(current int, pair *Pair) (depth int, fpair *Pair) {
     return max,fpair
 }
 
-func explode(pair *Pair) (bool, *Pair) {
+func split(pair *Pair) (bool) {
+
+	var toSplit *Pair
+	isLeft := true
+	traverse(pair, func(at *Pair) bool {
+		if at.xLiteral >= 10 {
+			toSplit = at
+			isLeft = true
+			return false
+		}
+
+		if at.yLiteral >= 10 {
+			toSplit = at
+			isLeft = false
+			return false
+		}
+
+		return true
+	})
+
+	if toSplit != nil {
+
+		newPair := Pair{}
+
+		if isLeft {
+			newPair.xLiteral = toSplit.xLiteral / 2
+			newPair.yLiteral = (toSplit.xLiteral / 2) + (toSplit.xLiteral % 2)
+			newPair.parent = toSplit
+			toSplit.xLiteral = 0
+			toSplit.xPair = &newPair
+		} else {
+			newPair.xLiteral = toSplit.yLiteral / 2
+			newPair.yLiteral = (toSplit.yLiteral / 2) + (toSplit.yLiteral % 2)
+			newPair.parent = toSplit
+			toSplit.yLiteral = 0
+			toSplit.yPair = &newPair
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func explode(pair *Pair) (bool) {
 
 	if getDepth(0, pair) < 4 {
-		return false, pair
+		return false
 	}
 
 	_,exploded := getFirstDepth4(0,pair)
@@ -121,7 +185,7 @@ func explode(pair *Pair) (bool, *Pair) {
 	for at, literal := range literalList {
 
 		if literal == &exploded.xLiteral {
-			if (at - 1) > 0 {
+			if (at - 1) >= 0 {
 				xChange = literalList[at-1]
 			}
 		}
@@ -154,9 +218,7 @@ func explode(pair *Pair) (bool, *Pair) {
 		parent.yPair = nil
 	}
 
-
-
-	return true, pair
+	return true
 }
 
 func addPairs(a *Pair, b *Pair) *Pair {
@@ -216,6 +278,7 @@ func printPair(p *Pair) string {
 	output := "["
 
 	if p.xPair == nil {
+
 		output += strconv.Itoa(p.xLiteral)
 	} else {
 		output += printPair(p.xPair)
@@ -232,6 +295,20 @@ func printPair(p *Pair) string {
 	output += "]"
 
 	return output
+}
+
+func traverse(p *Pair, atFunc func(at *Pair) bool) {
+	if !atFunc(p) {
+		return
+	}
+
+	if p.xPair != nil {
+		traverse(p.xPair, atFunc)
+	}
+
+	if p.yPair != nil {
+		traverse(p.yPair, atFunc)
+	}
 }
 
 func traverseLiterals(p *Pair, atFunc func(at *int)) {
