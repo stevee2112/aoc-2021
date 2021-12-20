@@ -33,7 +33,8 @@ func main() {
 		//_ := scanner.Text()
 	}
 
-	pairStr := "[1,[[3,[2,[1,[7,3]]]],[6,1]]]" // TODO THIS IS NOT WORKING
+	pairStr := "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]"
+	//pairStr := "[1,[[3,[2,[1,[7,3]]]],[6,1]]]" // TODO THIS IS NOT WORKING
 	// need to better handle getting left and right.  I think the better way
 	// is to traverse like the print function which is seeing nodes in order
 	// then when we match getting the previous, and next.
@@ -41,6 +42,7 @@ func main() {
 	pair := parsePair(pairStr)
 
 	fmt.Println(printPair(pair))
+	fmt.Println(explode(pair))
 	fmt.Println(explode(pair))
 	fmt.Println(printPair(pair))
 
@@ -107,33 +109,38 @@ func explode(pair *Pair) (bool, *Pair) {
 
 	_,exploded := getFirstDepth4(0,pair)
 
-	xPlode := exploded.xLiteral
-	yPlode := exploded.yLiteral
+	literalList := []*int{}
+	
+	traverseLiterals(pair, func(at *int){
+		literalList = append(literalList, at)
+	})
 
-	leftAt := exploded.parent
-	rightAt := exploded.parent
+	var xChange *int
+	var yChange *int
 
-	// set left value
-	for leftAt != nil {
-		if leftAt.xPair != nil {
-			leftAt = leftAt.parent
-		} else {
-			leftAt.xLiteral += xPlode
-			leftAt.xPair = nil
-			break
+	for at, literal := range literalList {
+
+		if literal == &exploded.xLiteral {
+			if (at - 1) > 0 {
+				xChange = literalList[at-1]
+			}
+		}
+
+		if literal == &exploded.yLiteral {
+			if (at + 1) < len(literalList) {
+				 yChange = literalList[at+1]
+			}
 		}
 	}
 
+	// set left value
+	if xChange != nil {
+		*xChange = *xChange + exploded.xLiteral
+	}
+
 	// set right value
-	for rightAt != nil {
-		if rightAt.yPair != nil {
-			fmt.Println(rightAt)
-			rightAt = rightAt.parent
-		} else {
-			rightAt.yLiteral += yPlode
-			rightAt.yPair = nil
-			break
-		}
+	if yChange != nil {
+		*yChange = *yChange + exploded.yLiteral
 	}
 
 	// replace with 0
@@ -206,7 +213,6 @@ func parsePair(p string) *Pair {
 }
 
 func printPair(p *Pair) string {
-
 	output := "["
 
 	if p.xPair == nil {
@@ -226,4 +232,18 @@ func printPair(p *Pair) string {
 	output += "]"
 
 	return output
+}
+
+func traverseLiterals(p *Pair, atFunc func(at *int)) {
+	if p.xPair == nil {
+		atFunc(&p.xLiteral)
+	} else {
+		traverseLiterals(p.xPair, atFunc)
+	}
+
+	if p.yPair == nil {
+		atFunc(&p.yLiteral)
+	} else {
+		traverseLiterals(p.yPair, atFunc)
+	}
 }
