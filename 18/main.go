@@ -24,50 +24,67 @@ func main() {
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/input")
+	input, _ := os.Open(path.Dir(file) + "/example")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
 
+	pairStr := ""
+	var pair *Pair
 	for scanner.Scan() {
-		//_ := scanner.Text()
+		pairStr = scanner.Text()
+		current := parsePair(pairStr)
+
+		if pair == nil {
+			pair = current
+			fmt.Println("first \t\t", printPair(pair))
+			continue
+		}
+
+		pair = addPairs(pair, current)
+		reduce(pair)
+		fmt.Println("current\t\t", printPair(pair))
 	}
 
-	// TODO THIS EXAMPLE IS WRONG SPLIT ORDER IS WRONG
-	pairStr1 := "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]" 
-	pair1 := parsePair(pairStr1)
+	// // TODO THIS EXAMPLE IS WRONG SPLIT ORDER IS WRONG
+	// pairStr1 := "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]"
+	// pair1 := parsePair(pairStr1)
 
-	pairStr2 := "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"
-	pair2 := parsePair(pairStr2)
+	// pairStr2 := "[2,9]"
+	// pair2 := parsePair(pairStr2)
 
-	fmt.Println(printPair(pair1))
-	fmt.Println(printPair(pair2))
+	// pair = addPairs(pair1, pair2)
 
-	pair := addPairs(pair1, pair2)
+	// fmt.Println("original\t", printPair(pair))
 
-	fmt.Println("original\t", printPair(pair))
+	// reduce(pair)
+
+	fmt.Println("final\t\t", printPair(pair))
+
+	fmt.Printf("Part 1: %d\n", 0)
+	fmt.Printf("Part 2: %d\n", 0)
+}
+
+func reduce(pair *Pair) {
 	for {
 		exploded :=explode(pair)
 
 		if exploded {
-			fmt.Println("explode\t\t", printPair(pair))
+			//fmt.Println("explode\t\t", printPair(pair))
 			continue
 		}
 
 		splited :=split(pair)
 
 		if splited {
-			fmt.Println("split\t\t", printPair(pair))
+			//fmt.Println("split\t\t", printPair(pair))
 			continue
 		}
 
 		break
 	}
 
-	fmt.Println("final\t\t", printPair(pair))
-
-	fmt.Printf("Part 1: %d\n", 0)
-	fmt.Printf("Part 2: %d\n", 0)
+	return
 }
 
 func getDepth(current int, pair *Pair) (depth int) {
@@ -125,21 +142,37 @@ func split(pair *Pair) (bool) {
 
 	var toSplit *Pair
 	isLeft := true
-	traverse(pair, func(at *Pair) bool {
-		if at.xLiteral >= 10 {
-			toSplit = at
-			isLeft = true
-			return false
-		}
 
-		if at.yLiteral >= 10 {
-			toSplit = at
-			isLeft = false
-			return false
-		}
+	literalList := []struct{
+		literal *int
+		pair *Pair
+	}{}
 
-		return true
+	traverseLiterals(pair, func(at *int, pair *Pair){
+		literalList = append(literalList, struct{
+			literal *int
+			pair *Pair
+		} {
+			at,
+			pair,
+		})
 	})
+
+	for _,pair := range literalList {
+
+		if *pair.literal >= 10 {
+			if pair.literal == &pair.pair.xLiteral {
+				isLeft = true
+			}
+
+			if pair.literal == &pair.pair.yLiteral {
+				isLeft = false
+			}
+
+			toSplit = pair.pair
+			break
+		}
+	}
 
 	if toSplit != nil {
 
@@ -174,8 +207,8 @@ func explode(pair *Pair) (bool) {
 	_,exploded := getFirstDepth4(0,pair)
 
 	literalList := []*int{}
-	
-	traverseLiterals(pair, func(at *int){
+
+	traverseLiterals(pair, func(at *int, pair *Pair){
 		literalList = append(literalList, at)
 	})
 
@@ -191,7 +224,7 @@ func explode(pair *Pair) (bool) {
 		}
 
 		if literal == &exploded.yLiteral {
-			if (at + 1) < len(literalList) {
+			if (at + 1) < len(literalList)  {
 				 yChange = literalList[at+1]
 			}
 		}
@@ -227,6 +260,8 @@ func addPairs(a *Pair, b *Pair) *Pair {
 	pair = &new
 	pair.xPair = a
 	pair.yPair = b
+	a.parent = pair
+	b.parent = pair
 	return pair
 }
 
@@ -259,6 +294,7 @@ func parsePair(p string) *Pair {
 		}
 
 		if intChar, err := strconv.Atoi(char); err == nil { // literal
+
 			if left {
 				at.xLiteral = intChar
 			} else {
@@ -297,29 +333,15 @@ func printPair(p *Pair) string {
 	return output
 }
 
-func traverse(p *Pair, atFunc func(at *Pair) bool) {
-	if !atFunc(p) {
-		return
-	}
-
-	if p.xPair != nil {
-		traverse(p.xPair, atFunc)
-	}
-
-	if p.yPair != nil {
-		traverse(p.yPair, atFunc)
-	}
-}
-
-func traverseLiterals(p *Pair, atFunc func(at *int)) {
+func traverseLiterals(p *Pair, atFunc func(at *int, pair *Pair)) {
 	if p.xPair == nil {
-		atFunc(&p.xLiteral)
+		atFunc(&p.xLiteral, p)
 	} else {
 		traverseLiterals(p.xPair, atFunc)
 	}
 
 	if p.yPair == nil {
-		atFunc(&p.yLiteral)
+		atFunc(&p.yLiteral, p)
 	} else {
 		traverseLiterals(p.yPair, atFunc)
 	}
