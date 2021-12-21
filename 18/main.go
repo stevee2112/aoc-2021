@@ -7,7 +7,6 @@ import (
 	"path"
 	"runtime"
 	"strings"
-	//"stevee2112/aoc-2021/util"
 	"strconv"
 )
 
@@ -24,45 +23,80 @@ func main() {
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/example")
+	input, _ := os.Open(path.Dir(file) + "/input")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
 
-	pairStr := ""
-	var pair *Pair
+	pairs := []*Pair{}
+	pairStrings := []string{}
+
 	for scanner.Scan() {
-		pairStr = scanner.Text()
-		current := parsePair(pairStr)
+		pairStr := scanner.Text()
+		pairs = append(pairs, parsePair(pairStr))
+		pairStrings = append(pairStrings, pairStr)
+	}
+
+	var pair *Pair
+	for _, current := range pairs {
 
 		if pair == nil {
 			pair = current
-			fmt.Println("first \t\t", printPair(pair))
 			continue
 		}
 
 		pair = addPairs(pair, current)
 		reduce(pair)
-		fmt.Println("current\t\t", printPair(pair))
 	}
 
-	// // TODO THIS EXAMPLE IS WRONG SPLIT ORDER IS WRONG
-	// pairStr1 := "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]"
-	// pair1 := parsePair(pairStr1)
+	part1 := computeMagnitude(pair)
 
-	// pairStr2 := "[2,9]"
-	// pair2 := parsePair(pairStr2)
+	max := 0
 
-	// pair = addPairs(pair1, pair2)
+	for i := 0; i < len(pairStrings);i++ {
+		for j := 0; j < len(pairStrings);j++ {
+			if i == j {
+				continue
+			}
 
-	// fmt.Println("original\t", printPair(pair))
+			sum1 := addPairs(parsePair(pairStrings[i]),parsePair(pairStrings[j]))
+			sum2 := addPairs(parsePair(pairStrings[j]),parsePair(pairStrings[i]))
 
-	// reduce(pair)
+			reduce(sum1)
+			reduce(sum2)
 
-	fmt.Println("final\t\t", printPair(pair))
+			ab := computeMagnitude(sum1)
+			ba := computeMagnitude(sum2)
 
-	fmt.Printf("Part 1: %d\n", 0)
-	fmt.Printf("Part 2: %d\n", 0)
+			if ab > max {
+				max = ab
+			}
+
+			if ba > max {
+				max = ba
+			}
+		}
+	}
+
+	fmt.Printf("Part 1: %d\n", part1)
+	fmt.Printf("Part 2: %d\n", max)
+}
+
+func computeMagnitude(pair *Pair) int {
+	sum := 0
+	if pair.xPair == nil {
+		sum += 3 * pair.xLiteral
+	} else {
+		sum += 3 * computeMagnitude(pair.xPair)
+	}
+
+	if pair.yPair == nil {
+		sum += 2 * pair.yLiteral
+	} else {
+		sum += 2 * computeMagnitude(pair.yPair)
+	}
+
+	return sum
 }
 
 func reduce(pair *Pair) {
@@ -70,14 +104,12 @@ func reduce(pair *Pair) {
 		exploded :=explode(pair)
 
 		if exploded {
-			//fmt.Println("explode\t\t", printPair(pair))
 			continue
 		}
 
 		splited :=split(pair)
 
 		if splited {
-			//fmt.Println("split\t\t", printPair(pair))
 			continue
 		}
 
