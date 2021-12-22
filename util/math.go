@@ -41,3 +41,14 @@ func Max(ints []int) int {
 
 	return max
 }
+
+func Min(ints []int) int {
+	min := 999999999999
+	for _, a := range ints {
+		if a < min {
+			min = a
+		}
+	}
+
+	return min
+}

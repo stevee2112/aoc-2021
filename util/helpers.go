@@ -29,3 +29,12 @@ func HexToBin(hex string) (string) {
 
 	return binString
 }
+
+func CloneIntMap(cloner map[int]int) map[int]int {
+	clone := map[int]int{}
+	for k,v := range cloner {
+	  clone[k] = v
+	}
+
+	return clone
+}
