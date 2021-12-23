@@ -30,93 +30,38 @@ func main() {
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
 
-	area1 := util.Grid{}
-	area2 := util.Grid{}
-	next := false
+	scanners := [][]Point{}
 
-	y := 0
+	at := 0
+	scanners = append(scanners, []Point{})
 	for scanner.Scan() {
 
 		line := scanner.Text()
 
-		if line == "" {
-			next = true
-			y = 0
+		if strings.Contains(line, "scanner") {
 			continue
 		}
 
-		if !next {
-			x := 0
-			for _,val := range strings.Split(line,"") {
-				area1.SetValue(x, y, val)
-				x++
-			}
-			y++
-		} else {
-			x := 0
-			for _,val := range strings.Split(line,"") {
-				area2.SetValue(x, y, val)
-				x++
-			}
-			y++
-		}
-	}
-
-	area1.PrintGrid(0)
-	area2.PrintGrid(0)
-
-	beacons1 := []Point{}
-
-	scan1 := util.Coordinate{}
-	area1.Traverse(func(coor util.Coordinate) bool {
-		if coor.Value.(string) == "S" {
-			scan1 = coor
-			return false
+		if line == "" {
+			at++
+			scanners = append(scanners, []Point{})
+			continue
 		}
 
-		return true
-	})
-
-	fmt.Println("here", scan1)
-
-	area1.Traverse(func(coor util.Coordinate) bool {
-		if coor.Value.(string) == "B" {
-			fmt.Println(coor)
-			beacons1 = append(beacons1, Point{coor.X - scan1.X, coor.Y - scan1.Y})
-		}
-
-		return true
-	})
-
-	fmt.Println("from grid", beacons1)
-
-	// TODO be able to pull beacons from grid for easy testing
-
-	beacons1 = []Point{
-		Point{-1,1},
-		Point{3,1},
-		Point{2,3},
-		Point{8,1},
+		parts := strings.Split(line, ",")
+		scanners[at] = append(scanners[at], Point{util.Atoi(parts[0]), util.Atoi(parts[1])})
 	}
 
-	fmt.Println("actual", beacons1)
+	fmt.Println(scanners)
 
-	beacons2 := []Point{
-		Point{0,-3},
-		Point{6,1},
-		Point{10,1},
-		Point{9,3},
-	}
+	beacons1 := scanners[0]
+	beacons2 := scanners[1]
 
 	transformer1 := Point{}
 	transformer2 := Point{}
 
 	beacons1,transformer1 = getBounds(beacons1)
 	beacons2,transformer2 = getBounds(beacons2)
-
-
-	fmt.Println(beacons1)
-	fmt.Println(beacons2)
 
 	isMatch,relativeTransform := checkIfMatch(beacons1, beacons2)
 
@@ -129,6 +74,46 @@ func main() {
 		fmt.Println("scanner 2 at", Point{transformer1.X + sxat, transformer1.Y + syat})
 	}
 
+}
+
+func rotation() {
+// 1,1,1 positive x 
+// (rotate above value around x to get below)
+// 1,1,-1 rotated -90x
+// 1,-1,-1 rotated -180x
+// 1,-1,1 rotated -270x
+
+
+// -1,1,-1 negative x = -180y (1,1,1)
+// (rotate above value around x to get below)
+// -1	-1	-1 rotated -90x
+// -1	-1	1  rotated -180x
+// -1	1	1  rotated -270x
+
+
+// 1,-1,1 positive y = -90z (1,1,1)
+// (rotate above value around x to get below)
+// 1	1	1   rotated -90x
+// 1	1	-1  rotated -180x
+// 1	-1	-1  rotated -270x
+
+// -1,1,1 negative y = 90z (1,1,1)
+// (rotate above value around x to get below)
+// -1	1	-1  rotated -90x
+// -1	-1	-1  rotated -180x
+// -1	-1	1   rotated -270x
+
+// 1,1,-1 positive Z = 90y (1,1,1)
+// (rotate above value around x to get below)
+// 1,-1,-1 rotated -90x
+// 1,-1,1  rotated -180x
+// 1,1,1   rotated -270x
+
+// -1,1,1 negative Z = = -90y (1,1,1)
+// (rotate above value around x to get below)
+// -1	1	-1  rotated -90x
+// -1	-1	-1  rotated -180x
+// -1	-1	1   rotated -270x
 }
 
 func checkIfMatch(a []Point, b []Point) (bool, Point) {
