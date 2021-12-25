@@ -14,10 +14,11 @@ import (
 type Point struct {
 	X int
 	Y int
+	Z int
 }
 
 func (p Point) String() string {
-	return fmt.Sprintf("%d,%d", p.X, p.Y)
+	return fmt.Sprintf("%d,%d,%d", p.X, p.Y, p.Z)
 }
 
 func main() {
@@ -49,7 +50,7 @@ func main() {
 		}
 
 		parts := strings.Split(line, ",")
-		scanners[at] = append(scanners[at], Point{util.Atoi(parts[0]), util.Atoi(parts[1])})
+		scanners[at] = append(scanners[at], Point{util.Atoi(parts[0]), util.Atoi(parts[1]), util.Atoi(parts[2])})
 	}
 
 	fmt.Println(scanners)
@@ -68,10 +69,11 @@ func main() {
 	if isMatch {
 		sxat := (-transformer2.X) + relativeTransform.X
 		syat := (-transformer2.Y) + relativeTransform.Y
+		szat := (-transformer2.Z) + relativeTransform.Z
 
 		fmt.Println("match found")
-		fmt.Println("scanner 1 at 0,0")
-		fmt.Println("scanner 2 at", Point{transformer1.X + sxat, transformer1.Y + syat})
+		fmt.Println("scanner 1 at 0,0,0")
+		fmt.Println("scanner 2 at", Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat})
 	}
 
 }
@@ -122,12 +124,16 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 	axMax := a[0].X
 	ayMax := a[0].Y
+	azMax := a[0].Z
 	bxMax := b[0].X
 	byMax := b[0].Y
+	bzMax := b[0].Z
  	axMap := map[int]int{}
  	ayMap := map[int]int{}
+ 	azMap := map[int]int{}
  	bxMap := map[int]int{}
  	byMap := map[int]int{}
+ 	bzMap := map[int]int{}
 
 
 	for _,beacon := range a {
@@ -139,8 +145,13 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 			ayMax = beacon.Y
 		}
 
+		if beacon.Z > azMax {
+			azMax = beacon.Z
+		}
+
 		axMap[beacon.X]++
 		ayMap[beacon.Y]++
+		azMap[beacon.Z]++
 	}
 
 	for _,beacon := range b {
@@ -152,8 +163,13 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 			byMax = beacon.Y
 		}
 
+		if beacon.Z > bzMax {
+			bzMax = beacon.Z
+		}
+
 		bxMap[beacon.X]++
 		byMap[beacon.Y]++
+		bzMap[beacon.Z]++
 	}
 
 	// fmt.Println(ayMap, byMap)
@@ -174,8 +190,28 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					if getExactMatchCount(a, currentbbox) >= matchesNeeded {
-						return true, Point{j,i}
+					// move box right (z+) and check
+					for k := 0;k <= bzMax;k++ {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{j,i,k}
+							}
+						}
+					}
+
+					// move box left and check
+					for k := bzMax;k >= 0;k-- {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{j,i,-k}
+							}
+						}
 					}
 				}
 			}
@@ -186,8 +222,28 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					if getExactMatchCount(a, currentbbox) >= matchesNeeded {
-						return true, Point{-j,i}
+					// move box right (z+) and check
+					for k := 0;k <= bzMax;k++ {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{j,i,k}
+							}
+						}
+					}
+
+					// move box right (z-) and check
+					for k := bzMax;k >= 0;k-- {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{-j,i,-k}
+							}
+						}
 					}
 				}
 			}
@@ -207,8 +263,28 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					if getExactMatchCount(a, currentbbox) >= matchesNeeded {
-						return true, Point{j,-i}
+					// move box right (z+) and check
+					for k := 0;k <= bzMax;k++ {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{j,-i,k}
+							}
+						}
+					}
+
+					// move box right (z-) and check
+					for k := bzMax;k >= 0;k-- {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{j,-i,-k}
+							}
+						}
 					}
 				}
 			}
@@ -220,8 +296,28 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					if getExactMatchCount(a, currentbbox) >= matchesNeeded {
-						return true, Point{-j,-i}
+					// move box right (z+) and check
+					for k := 0;k <= bzMax;k++ {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{-j,-i,k}
+							}
+						}
+					}
+
+					// move box right (z-) and check
+					for k := bzMax;k >= 0;k-- {
+
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+
+						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
+							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
+								return true, Point{-j,-i,-k}
+							}
+						}
 					}
 				}
 			}
@@ -267,13 +363,18 @@ func moveBox(box []Point, axis string, step int) ([]Point, map[int]int) {
 	for _,point := range box {
 
 		if axis == "x" {
-			moved = append(moved, Point{point.X + step, point.Y})
+			moved = append(moved, Point{point.X + step, point.Y, point.Z})
 			counts[point.X + step]++
 		}
 
 		if axis == "y" {
-			moved = append(moved, Point{point.X, point.Y + step})
+			moved = append(moved, Point{point.X, point.Y + step, point.Z})
 			counts[point.Y + step]++
+		}
+
+		if axis == "z" {
+			moved = append(moved, Point{point.X, point.Y, point.Z + step})
+			counts[point.Z + step]++
 		}
 	}
 
@@ -308,6 +409,7 @@ func getBounds(beacons []Point) ([]Point, Point) {
 
 	xMin := beacons[0].X
 	yMin := beacons[0].Y
+	zMin := beacons[0].Z
 
 	for _,beacon := range beacons {
 		if beacon.X < xMin {
@@ -317,14 +419,19 @@ func getBounds(beacons []Point) ([]Point, Point) {
 		if beacon.Y < yMin {
 			yMin = beacon.Y
 		}
+
+		if beacon.Z < zMin {
+			zMin = beacon.Z
+		}
 	}
 
 	for _,beacon := range beacons {
 		normalized = append(normalized, Point{
 			beacon.X - xMin,
 			beacon.Y - yMin,
+			beacon.Z - zMin,
 		})
 	}
 
-	return normalized, Point{xMin, yMin}
+	return normalized, Point{xMin, yMin, zMin}
 }
