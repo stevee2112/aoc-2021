@@ -53,12 +53,72 @@ func main() {
 		scanners[at] = append(scanners[at], Point{util.Atoi(parts[0]), util.Atoi(parts[1]), util.Atoi(parts[2])})
 	}
 
-	fmt.Println(scanners)
+	seen := map[string]bool{}
+	scanned := map[int]bool{}
+	scannersAt := map[int]Point{
+		0: Point{0,0,0}, // Add first scanner
+	}
 
+	// add beacons in scanner[0]
+	for _,beacon := range scanners[0] {
+		seen[beacon.String()] = true
+	}
+
+	toScan := []int{0} // add first beacon to scan list
+
+	// TODO
+
+	// need to handle getting absolute distance for points when not a scanner overlaping with 0
+
+	for len(toScan) > 0 {
+		currentAt := toScan[0]
+		toScan = toScan[1:]
+		scanned[currentAt] = true
+		for i := 0; i < len(scanners);i ++ {
+
+			// if we have already scanned this
+			if _,done := scanned[i]; done {
+				continue
+			}
+
+			toCheckNext := []int{}
+			toCheckNext, seen, scannersAt = checkScanner(currentAt, i, scanners, seen, scannersAt)
+
+			if len(toCheckNext) > 0 {
+				for _, at := range toCheckNext {
+					if _,done := scanned[at]; !done {
+						fmt.Println("ADD TO SCAN LIST")
+					}
+				}
+			}
+		}
+	}
+
+	for i,scanner := range scannersAt {
+		fmt.Printf("Scanner %d at %s\n", i, scanner)
+	}
+
+	fmt.Println("beacons:", len(seen))
+}
+
+func checkScanner(
+	aAt int,
+	bAt int,
+	scanners [][]Point,
+	seen map[string]bool,
+	scannersAt map[int]Point,
+) (
+	[]int,
+	map[string]bool,
+	map[int]Point,
+) {
+	matchesNeeded := 12
+	checkAt := bAt
+	checkNext := []int{}
 	for i:=0; i < 24; i++ {
 
-		a := scanners[0]
-		b := rotatePoints(scanners[1], i)
+		a := scanners[aAt]
+		b := rotatePoints(scanners[checkAt], i)
 
 		transformer1 := Point{}
 		transformer2 := Point{}
@@ -66,25 +126,34 @@ func main() {
 		boundry1,transformer1 := getBounds(a)
 		boundry2,transformer2 := getBounds(b)
 
-		isMatch,relativeTransform := checkIfMatch(boundry1, boundry2)
+		isMatch,relativeTransform := checkIfMatch(boundry1, boundry2, matchesNeeded)
 
 		if isMatch {
 			sxat := (-transformer2.X) + relativeTransform.X
 			syat := (-transformer2.Y) + relativeTransform.Y
 			szat := (-transformer2.Z) + relativeTransform.Z
 
-			fmt.Println("match found at rotation index", i)
-			fmt.Println("scanner 1 at 0,0,0")
-			fmt.Println("scanner 2 at", Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat})
+			//fmt.Println("match found at rotation index", i)
+			relativeTransform := Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat}
+			scannersAt[checkAt] = relativeTransform
+			checkNext = append(checkNext, checkAt)
+			for _,relative := range b {
+				absolute := Point{
+					(transformer1.X + sxat) + relative.X,
+					(transformer1.Y + syat) + relative.Y,
+					(transformer1.Z + szat) + relative.Z,
+				}
+				seen[absolute.String()] = true
+				//fmt.Println("relative", scanners[1][i], "absolute", absolute)
+			}
 			break
 		}
-
 	}
+
+	return checkNext, seen, scannersAt
 }
 
-func checkIfMatch(a []Point, b []Point) (bool, Point) {
-
-	matchesNeeded := 3
+func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 
 	axMax := a[0].X
 	ayMax := a[0].Y
