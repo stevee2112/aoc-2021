@@ -55,67 +55,31 @@ func main() {
 
 	fmt.Println(scanners)
 
-	beacons1 := scanners[0]
-	beacons2 := scanners[1]
+	for i:=0; i < 24; i++ {
 
-	transformer1 := Point{}
-	transformer2 := Point{}
+		a := scanners[0]
+		b := rotatePoints(scanners[1], i)
 
-	beacons1,transformer1 = getBounds(beacons1)
-	beacons2,transformer2 = getBounds(beacons2)
+		transformer1 := Point{}
+		transformer2 := Point{}
 
-	isMatch,relativeTransform := checkIfMatch(beacons1, beacons2)
+		boundry1,transformer1 := getBounds(a)
+		boundry2,transformer2 := getBounds(b)
 
-	if isMatch {
-		sxat := (-transformer2.X) + relativeTransform.X
-		syat := (-transformer2.Y) + relativeTransform.Y
-		szat := (-transformer2.Z) + relativeTransform.Z
+		isMatch,relativeTransform := checkIfMatch(boundry1, boundry2)
 
-		fmt.Println("match found")
-		fmt.Println("scanner 1 at 0,0,0")
-		fmt.Println("scanner 2 at", Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat})
+		if isMatch {
+			sxat := (-transformer2.X) + relativeTransform.X
+			syat := (-transformer2.Y) + relativeTransform.Y
+			szat := (-transformer2.Z) + relativeTransform.Z
+
+			fmt.Println("match found at rotation index", i)
+			fmt.Println("scanner 1 at 0,0,0")
+			fmt.Println("scanner 2 at", Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat})
+			break
+		}
+
 	}
-
-}
-
-func rotation() {
-// 1,1,1 positive x 
-// (rotate above value around x to get below)
-// 1,1,-1 rotated -90x
-// 1,-1,-1 rotated -180x
-// 1,-1,1 rotated -270x
-
-
-// -1,1,-1 negative x = -180y (1,1,1)
-// (rotate above value around x to get below)
-// -1	-1	-1 rotated -90x
-// -1	-1	1  rotated -180x
-// -1	1	1  rotated -270x
-
-
-// 1,-1,1 positive y = -90z (1,1,1)
-// (rotate above value around x to get below)
-// 1	1	1   rotated -90x
-// 1	1	-1  rotated -180x
-// 1	-1	-1  rotated -270x
-
-// -1,1,1 negative y = 90z (1,1,1)
-// (rotate above value around x to get below)
-// -1	1	-1  rotated -90x
-// -1	-1	-1  rotated -180x
-// -1	-1	1   rotated -270x
-
-// 1,1,-1 positive Z = 90y (1,1,1)
-// (rotate above value around x to get below)
-// 1,-1,-1 rotated -90x
-// 1,-1,1  rotated -180x
-// 1,1,1   rotated -270x
-
-// -1,1,1 negative Z = = -90y (1,1,1)
-// (rotate above value around x to get below)
-// -1	1	-1  rotated -90x
-// -1	-1	-1  rotated -180x
-// -1	-1	1   rotated -270x
 }
 
 func checkIfMatch(a []Point, b []Point) (bool, Point) {
@@ -253,6 +217,7 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 	// move box b  (y-) and check
 	for i := 0;i <= byMax;i++ {
+
 		bmoveboxy, currentbyMap := moveBox(b, "y", -i)
 
 		// if have min amount of match for y
@@ -435,4 +400,177 @@ func getBounds(beacons []Point) ([]Point, Point) {
 	}
 
 	return normalized, Point{xMin, yMin, zMin}
+}
+
+func rotatePoints(points []Point, stage int) []Point {
+	rotated := []Point{}
+
+	for _,point := range points {
+		rotated = append(rotated, rotate(point, stage))
+	}
+
+	return rotated
+}
+
+func rotate(p Point, stage int) Point {
+
+	rotated := Point{p.X, p.Y, p.Z}
+	switch (stage) {
+	case 0:
+		rotated = p
+	case 1: // -90x
+		rotated.X = 1 * p.X
+		rotated.Y = 1 * p.Z
+		rotated.Z = -1 * p.Y
+	case 2: // -180x
+		rotated.X = 1 * p.X
+		rotated.Y = -1 * p.Y
+		rotated.Z = -1 * p.Z
+	case 3: // -270x
+		rotated.X = 1 * p.X
+		rotated.Y = -1 * p.Z
+		rotated.Z = 1 * p.Y
+	case 4: // -180y
+		rotated.X = -1 * p.X
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.Z
+	case 5: // -180y, -90x
+		rotated.X = -1 * p.X
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = 1 * current.Z
+		rotated.Z = -1 * current.Y
+	case 6: // -180y, -180x
+		rotated.X = -1 * p.X
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Y
+		rotated.Z = -1 * current.Z
+	case 7: // -180y, -270x
+		rotated.X = -1 * p.X
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Z
+		rotated.Z = 1 * current.Y
+	case 8: // -90z
+		rotated.X = 1 * p.Y
+		rotated.Y = -1 * p.X
+		rotated.Z = 1 * p.Z
+	case 9: // -90z, -90x
+		rotated.X = 1 * p.Y
+		rotated.Y = -1 * p.X
+		rotated.Z = 1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = 1 * current.Z
+		rotated.Z = -1 * current.Y
+	case 10: // -90z, -180x
+		rotated.X = 1 * p.Y
+		rotated.Y = -1 * p.X
+		rotated.Z = 1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Y
+		rotated.Z = -1 * current.Z
+	case 11: // -90z, -270x
+		rotated.X = 1 * p.Y
+		rotated.Y = -1 * p.X
+		rotated.Z = 1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Z
+		rotated.Z = 1 * current.Y
+	case 12: // 90z
+		rotated.X = -1 * p.Y
+		rotated.Y = 1 * p.X
+		rotated.Z = 1 * p.Z
+	case 13: // 90z, -90x
+		rotated.X = -1 * p.Y
+		rotated.Y = 1 * p.X
+		rotated.Z = 1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = 1 * current.Z
+		rotated.Z = -1 * current.Y
+	case 14: // 90z, -180x
+		rotated.X = -1 * p.Y
+		rotated.Y = 1 * p.X
+		rotated.Z = 1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Y
+		rotated.Z = -1 * current.Z
+	case 15: // 90z, -270x
+		rotated.X = -1 * p.Y
+		rotated.Y = 1 * p.X
+		rotated.Z = 1 * p.Z
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Z
+		rotated.Z = 1 * current.Y
+	case 16: // 90y
+		rotated.X = 1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.X
+	case 17: // 90y, -90x
+		rotated.X = 1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.X
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = 1 * current.Z
+		rotated.Z = -1 * current.Y
+	case 18: // 90y, -180x
+		rotated.X = 1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.X
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Y
+		rotated.Z = -1 * current.Z
+	case 19: // 90y, -270x
+		rotated.X = 1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = -1 * p.X
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Z
+		rotated.Z = 1 * current.Y
+	case 20: // -90y
+		rotated.X = -1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = 1 * p.X
+	case 21: // -90y, -90x
+		rotated.X = -1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = 1 * p.X
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = 1 * current.Z
+		rotated.Z = -1 * current.Y
+	case 22: // -90y, -180x
+		rotated.X = -1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = 1 * p.X
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Y
+		rotated.Z = -1 * current.Z
+	case 23: // -90y, -270x
+		rotated.X = -1 * p.Z
+		rotated.Y = 1 * p.Y
+		rotated.Z = 1 * p.X
+		current := Point{rotated.X, rotated.Y, rotated.Z}
+		rotated.X = 1 * current.X
+		rotated.Y = -1 * current.Z
+		rotated.Z = 1 * current.Y
+	}
+
+	return rotated
 }
