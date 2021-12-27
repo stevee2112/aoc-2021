@@ -81,13 +81,14 @@ func main() {
 				continue
 			}
 
-			toCheckNext := []int{}
+			toCheckNext := map[int][]Point{}
 			toCheckNext, seen, scannersAt = checkScanner(currentAt, i, scanners, seen, scannersAt)
 
 			if len(toCheckNext) > 0 {
-				for _, at := range toCheckNext {
+				for at, updated  := range toCheckNext {
 					if _,done := scanned[at]; !done {
-						fmt.Println("ADD TO SCAN LIST")
+						toScan = append(toScan, at)
+						scanners[at] = updated
 					}
 				}
 			}
@@ -108,15 +109,15 @@ func checkScanner(
 	seen map[string]bool,
 	scannersAt map[int]Point,
 ) (
-	[]int,
+	map[int][]Point,
 	map[string]bool,
 	map[int]Point,
 ) {
 	matchesNeeded := 12
 	checkAt := bAt
-	checkNext := []int{}
-	for i:=0; i < 24; i++ {
+	checkNext := map[int][]Point{}
 
+	for i:=0; i < 24; i++ {
 		a := scanners[aAt]
 		b := rotatePoints(scanners[checkAt], i)
 
@@ -125,6 +126,7 @@ func checkScanner(
 
 		boundry1,transformer1 := getBounds(a)
 		boundry2,transformer2 := getBounds(b)
+
 
 		isMatch,relativeTransform := checkIfMatch(boundry1, boundry2, matchesNeeded)
 
@@ -136,16 +138,19 @@ func checkScanner(
 			//fmt.Println("match found at rotation index", i)
 			relativeTransform := Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat}
 			scannersAt[checkAt] = relativeTransform
-			checkNext = append(checkNext, checkAt)
-			for _,relative := range b {
+			rotated := []Point{}
+			for _, relative := range b {
 				absolute := Point{
 					(transformer1.X + sxat) + relative.X,
 					(transformer1.Y + syat) + relative.Y,
 					(transformer1.Z + szat) + relative.Z,
 				}
 				seen[absolute.String()] = true
-				//fmt.Println("relative", scanners[1][i], "absolute", absolute)
+				rotated = append(rotated, absolute)
+				//fmt.Println("relative", scanners[bAt][j], "absolute", absolute)
 			}
+
+			checkNext[checkAt] = rotated
 			break
 		}
 	}
