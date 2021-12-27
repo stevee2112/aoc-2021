@@ -190,7 +190,7 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					// move box right (z+) and check
+					// move box out (z+) and check
 					for k := 0;k <= bzMax;k++ {
 
 						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
@@ -202,7 +202,7 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 						}
 					}
 
-					// move box left and check
+					// move box in (z-) and check
 					for k := bzMax;k >= 0;k-- {
 
 						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
@@ -215,26 +215,27 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 					}
 				}
 			}
-			// move box left and check
+
+			// move box left (x-) and check
 			for j := bxMax;j >= 0;j-- {
 
 				currentbbox, currentbxMap := moveBox(bmoveboxy, "x", axMax - j)
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					// move box right (z+) and check
+					// move box out (z+) and check
 					for k := 0;k <= bzMax;k++ {
 
 						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
 
 						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
 							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
-								return true, Point{j,i,k}
+								return true, Point{-j,i,k}
 							}
 						}
 					}
 
-					// move box right (z-) and check
+					// move box in (z-) and check
 					for k := bzMax;k >= 0;k-- {
 
 						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
@@ -263,7 +264,7 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
-					// move box right (z+) and check
+					// move box out (z+) and check
 					for k := 0;k <= bzMax;k++ {
 
 						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
@@ -289,7 +290,7 @@ func checkIfMatch(a []Point, b []Point) (bool, Point) {
 				}
 			}
 
-			// move box left and check
+			// move box left (-x) and check
 			for j := 0;j <= bxMax;j++ {
 
 				currentbbox, currentbxMap := moveBox(bmoveboxy, "x", -j)
