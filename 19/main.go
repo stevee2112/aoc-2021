@@ -26,7 +26,7 @@ func main() {
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/example")
+	input, _ := os.Open(path.Dir(file) + "/input")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
@@ -66,29 +66,41 @@ func main() {
 
 	toScan := []int{0} // add first beacon to scan list
 
-	// TODO
-
-	// need to handle getting absolute distance for points when not a scanner overlaping with 0
 
 	for len(toScan) > 0 {
+		fmt.Println(toScan)
 		currentAt := toScan[0]
 		toScan = toScan[1:]
+
+		if _,done := scanned[currentAt]; done {
+			fmt.Println("done")
+			continue
+		}
+
+
 		scanned[currentAt] = true
-		for i := 0; i < len(scanners);i ++ {
+
+		//fmt.Println(scanners[currentAt])
+		for i := 0; i < len(scanners);i++ {
 
 			// if we have already scanned this
 			if _,done := scanned[i]; done {
 				continue
 			}
 
+			fmt.Println("working... at", currentAt, i)
+
 			toCheckNext := map[int][]Point{}
 			toCheckNext, seen, scannersAt = checkScanner(currentAt, i, scanners, seen, scannersAt)
 
 			if len(toCheckNext) > 0 {
 				for at, updated  := range toCheckNext {
+					fmt.Println("match at", at)
 					if _,done := scanned[at]; !done {
 						toScan = append(toScan, at)
+						//fmt.Println(scanners[at])
 						scanners[at] = updated
+						//fmt.Println(scanners[at])
 					}
 				}
 			}
@@ -210,11 +222,6 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 		bzMap[beacon.Z]++
 	}
 
-	// fmt.Println(ayMap, byMap)
-	// fmt.Println(getMatchCount(ayMap, byMap))
-	// fmt.Println(axMap, bxMap)
-	// fmt.Println(getMatchCount(axMap, bxMap))
-
 	// move box b up (y+) and check
 	for i := 0;i <= byMax;i++ {
 		bmoveboxy, currentbyMap := moveBox(b, "y", i)
@@ -239,11 +246,13 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 							}
 						}
 					}
+				}
 
+				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 					// move box in (z-) and check
 					for k := bzMax;k >= 0;k-- {
 
-						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", -k)
 
 						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
 							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
@@ -253,11 +262,13 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 					}
 				}
 			}
+		}
 
+		if getMatchCount(ayMap,currentbyMap) >= matchesNeeded {
 			// move box left (x-) and check
-			for j := bxMax;j >= 0;j-- {
+			for j := 0;j <= bxMax;j++ {
 
-				currentbbox, currentbxMap := moveBox(bmoveboxy, "x", axMax - j)
+				currentbbox, currentbxMap := moveBox(bmoveboxy, "x", -j)
 
 				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 
@@ -272,11 +283,13 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 							}
 						}
 					}
+				}
 
+				if getMatchCount(axMap,currentbxMap) >= matchesNeeded {
 					// move box in (z-) and check
-					for k := bzMax;k >= 0;k-- {
+					for k := 0;k <= bzMax;k++ {
 
-						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", -k)
 
 						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
 							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
@@ -316,9 +329,9 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 					}
 
 					// move box right (z-) and check
-					for k := bzMax;k >= 0;k-- {
+					for k := 0;k <= bzMax;k++ {
 
-						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", -k)
 
 						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
 							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
@@ -351,7 +364,7 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 					// move box right (z-) and check
 					for k := bzMax;k >= 0;k-- {
 
-						currentbbox, currentbzMap := moveBox(currentbbox, "z", k)
+						currentbbox, currentbzMap := moveBox(currentbbox, "z", -k)
 
 						if getMatchCount(azMap,currentbzMap) >= matchesNeeded {
 							if getExactMatchCount(a, currentbbox) >= matchesNeeded {
