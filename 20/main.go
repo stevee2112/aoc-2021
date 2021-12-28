@@ -16,7 +16,7 @@ func main() {
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/example")
+	input, _ := os.Open(path.Dir(file) + "/input")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
@@ -47,33 +47,38 @@ func main() {
 		}
 	}
 
-	//image.PrintGrid(0)
-
 	infiniteChar := "."
-
-	//fmt.Println("infinity", infiniteChar)
-	image = enhance(image, transformMap, infiniteChar)
-
-	infiniteChar = getNextInfinite(infiniteChar, transformMap)
-
-	//image.PrintGrid(0)
-	//fmt.Println("infinity", infiniteChar)
-	image = enhance(image, transformMap, infiniteChar)
-
-	//image.PrintGrid(0)
-
 	part1 := 0
+	part2 := 0
+
+
+	count := 50
+	for i := 0;i < count;i++ {
+		image = enhance(image, transformMap, infiniteChar)
+		infiniteChar = getNextInfinite(infiniteChar, transformMap)
+
+		// Part 1
+		if i == 1 {
+			image.Traverse(func(coor util.Coordinate) bool {
+				if coor.Value.(string) == "#" {
+					part1++
+				}
+
+				return true
+			})
+		}
+	}
 
 	image.Traverse(func(coor util.Coordinate) bool {
 		if coor.Value.(string) == "#" {
-			part1++
+			part2++
 		}
 
 		return true
 	})
 
 	fmt.Printf("Part 1: %d\n", part1)
-	fmt.Printf("Part 2: %d\n", 0)
+	fmt.Printf("Part 2: %d\n", part2)
 }
 
 func getNextInfinite(infiniteChar string, transformMap []string) string {
