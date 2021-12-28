@@ -68,50 +68,49 @@ func main() {
 
 
 	for len(toScan) > 0 {
-		fmt.Println(toScan)
 		currentAt := toScan[0]
 		toScan = toScan[1:]
 
 		if _,done := scanned[currentAt]; done {
-			fmt.Println("done")
 			continue
 		}
 
-
-		scanned[currentAt] = true
-
-		//fmt.Println(scanners[currentAt])
 		for i := 0; i < len(scanners);i++ {
 
-			// if we have already scanned this
-			if _,done := scanned[i]; done {
+			if currentAt == i {
 				continue
 			}
-
-			fmt.Println("working... at", currentAt, i)
 
 			toCheckNext := map[int][]Point{}
 			toCheckNext, seen, scannersAt = checkScanner(currentAt, i, scanners, seen, scannersAt)
 
 			if len(toCheckNext) > 0 {
 				for at, updated  := range toCheckNext {
-					fmt.Println("match at", at)
 					if _,done := scanned[at]; !done {
 						toScan = append(toScan, at)
-						//fmt.Println(scanners[at])
 						scanners[at] = updated
-						//fmt.Println(scanners[at])
 					}
 				}
 			}
 		}
+
+		scanned[currentAt] = true
 	}
 
-	for i,scanner := range scannersAt {
-		fmt.Printf("Scanner %d at %s\n", i, scanner)
+	maxDistance := 0
+	for i,outer := range scannersAt {
+		fmt.Printf("Scanner %d at %s\n", i, outer)
+		for _,inner := range scannersAt {
+			distance := util.Abs(outer.X - inner.X) + util.Abs(outer.Y - inner.Y) + util.Abs(outer.Z - inner.Z)
+
+			if distance > maxDistance {
+				maxDistance = distance
+			}
+		}
 	}
 
-	fmt.Println("beacons:", len(seen))
+	fmt.Println("Part 1:", len(seen))
+	fmt.Println("Part 2:", maxDistance)
 }
 
 func checkScanner(
@@ -147,8 +146,13 @@ func checkScanner(
 			syat := (-transformer2.Y) + relativeTransform.Y
 			szat := (-transformer2.Z) + relativeTransform.Z
 
-			//fmt.Println("match found at rotation index", i)
 			relativeTransform := Point{transformer1.X + sxat, transformer1.Y + syat, transformer1.Z + szat}
+
+			// already transformed
+			if relativeTransform.String() == "0,0,0" {
+				return checkNext, seen, scannersAt
+			}
+
 			scannersAt[checkAt] = relativeTransform
 			rotated := []Point{}
 			for _, relative := range b {
@@ -159,7 +163,6 @@ func checkScanner(
 				}
 				seen[absolute.String()] = true
 				rotated = append(rotated, absolute)
-				//fmt.Println("relative", scanners[bAt][j], "absolute", absolute)
 			}
 
 			checkNext[checkAt] = rotated
@@ -376,12 +379,6 @@ func checkIfMatch(a []Point, b []Point, matchesNeeded int) (bool, Point) {
 			}
 		}
 	}
-
-	// move box b down and check
-	// if have min amount of match for y
-		// move box right and check
-		// move box left and check
-
 
 	return false, Point{}
 }
