@@ -38,3 +38,13 @@ func CloneIntMap(cloner map[int]int) map[int]int {
 
 	return clone
 }
+
+func CloneStringIntMap(cloner map[string]int) map[string]int {
+	clone := map[string]int{}
+	for k,v := range cloner {
+	  clone[k] = v
+	}
+
+	return clone
+}
+
