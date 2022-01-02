@@ -68,13 +68,14 @@ func main() {
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/input")
+	input, _ := os.Open(path.Dir(file) + "/example")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
 
 	ranges := []Range{}
 
+	part2 := true
 line:
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -91,12 +92,14 @@ line:
 			intStart := util.Atoi(parts[0])
 			intEnd := util.Atoi(parts[1])
 
-			if intStart < -50 {
-				continue line
-			}
+			if !part2 {
+				if intStart < -50 {
+					continue line
+				}
 
-			if intEnd > 50 {
-				continue line
+				if intEnd > 50 {
+					continue line
+				}
 			}
 
 			switch (i) {
@@ -140,6 +143,7 @@ func sum(ranges []Range) int {
 }
 
 func removeRange(ranges []Range, removeRange Range) []Range {
+
 	newRanges := []Range{}
 
 	xRanges := []AxisRange{}
@@ -155,7 +159,7 @@ func removeRange(ranges []Range, removeRange Range) []Range {
 		}
 	}
 
-	for _,aRange := range ranges {
+	for _,aRange := range overlapRanges {
 		xRanges = append(xRanges, aRange.xRange)
 		yRanges = append(yRanges, aRange.yRange)
 		zRanges = append(zRanges, aRange.zRange)
@@ -169,6 +173,7 @@ func removeRange(ranges []Range, removeRange Range) []Range {
 	uniqueXAxisRange := getUniqueAxisRanges(xRanges)
 	uniqueYAxisRange := getUniqueAxisRanges(yRanges)
 	uniqueZAxisRange := getUniqueAxisRanges(zRanges)
+
 
 	for _, x := range uniqueXAxisRange{
 		for _, y := range uniqueYAxisRange{
@@ -279,10 +284,10 @@ func getUniqueAxisRanges(ranges []AxisRange) []AxisRange {
 				if vector.value == previousVector.value {
 					continue
 				}
-				
+
 				newRanges = append(newRanges, AxisRange{previousVector.value, vector.value - 1})
 			}
-		}			
+		}
 
 		if vector.label == "end" {
 			if previousVector.label == "start" { // close current range
@@ -293,10 +298,9 @@ func getUniqueAxisRanges(ranges []AxisRange) []AxisRange {
 				if vector.value == previousVector.value {
 					continue
 				}
-				
+
 				newRanges = append(newRanges, AxisRange{previousVector.value + 1, vector.value})
 			}
-			
 		}
 
 		previousVector = Vector{vector.value, vector.label}
