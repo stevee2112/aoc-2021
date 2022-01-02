@@ -24,7 +24,7 @@ type Range struct {
 
 func (r Range) String() string {
 	return fmt.Sprintf(
-		"%d,%d,%d,%d,%d,%d",
+		"x=%d..%d,y=%d..%d,z=%d..%d",
 		r.xRange.start,
 		r.xRange.end,
 		r.yRange.start,
@@ -110,14 +110,14 @@ line:
 		}
 
 		if action == "on" {
-			ranges = mergeRange(append(ranges, newRange))
+			ranges = mergeRange(ranges, newRange)
 		}
 
 		if action == "off" {
 			ranges = removeRange(ranges, newRange)
 		}
 
-		fmt.Println("after line", len(ranges))
+		fmt.Println("after", line, len(ranges))
 		// for _, blah := range ranges {
 		// 	fmt.Println(blah)
 		// }
@@ -146,6 +146,15 @@ func removeRange(ranges []Range, removeRange Range) []Range {
 	yRanges := []AxisRange{}
 	zRanges := []AxisRange{}
 
+	overlapRanges := []Range{}
+	for _, aRange := range ranges {
+		if checkIfOverlap(aRange, removeRange) {
+			overlapRanges = append(overlapRanges, aRange)
+		} else {
+			newRanges = append(newRanges, aRange)
+		}
+	}
+
 	for _,aRange := range ranges {
 		xRanges = append(xRanges, aRange.xRange)
 		yRanges = append(yRanges, aRange.yRange)
@@ -171,7 +180,7 @@ func removeRange(ranges []Range, removeRange Range) []Range {
 				}
 
 				include := false
-				for _,original := range ranges {
+				for _,original := range overlapRanges {
 					if checkIfOverlap(original, Range{x, y, z}) {
 						include = true
 						break
@@ -188,7 +197,7 @@ func removeRange(ranges []Range, removeRange Range) []Range {
 	return newRanges
 }
 
-func mergeRange(ranges []Range) []Range {
+func mergeRange(ranges []Range, newRange Range) []Range {
 
 	newRanges := []Range{}
 
@@ -196,11 +205,24 @@ func mergeRange(ranges []Range) []Range {
 	yRanges := []AxisRange{}
 	zRanges := []AxisRange{}
 
-	for _,aRange := range ranges {
+	overlapRanges := []Range{}
+	for _, aRange := range ranges {
+		if checkIfOverlap(aRange, newRange) {
+			overlapRanges = append(overlapRanges, aRange)
+		} else {
+			newRanges = append(newRanges, aRange)
+		}
+	}
+
+	// add new Range
+	overlapRanges = append(overlapRanges, newRange)
+
+	for _,aRange := range overlapRanges {
 		xRanges = append(xRanges, aRange.xRange)
 		yRanges = append(yRanges, aRange.yRange)
 		zRanges = append(zRanges, aRange.zRange)
 	}
+
 
 	uniqueXAxisRange := getUniqueAxisRanges(xRanges)
 	uniqueYAxisRange := getUniqueAxisRanges(yRanges)
@@ -216,7 +238,7 @@ func mergeRange(ranges []Range) []Range {
 
 				if _,exists := rangeCache[rangeVal.String()]; !exists {
 					include := false
-					for _,original := range ranges {
+					for _,original := range overlapRanges {
 						if checkIfOverlap(original, rangeVal) {
 							include = true
 							break
@@ -226,8 +248,8 @@ func mergeRange(ranges []Range) []Range {
 					if include {
 						rangeCache[rangeVal.String()] = true
 						newRanges = append(newRanges, rangeVal)
-					}					
-				}							
+					}
+				}
 			}
 		}
 	}
