@@ -60,23 +60,17 @@ func (v Vectors) Swap(i, j int)      {
 
 func main() {
 
-	// fmt.Println(getUniqueAxisRanges([]AxisRange{
-	// 	AxisRange{1,1},
-	// 	AxisRange{1,1},
-	// }))
-
 	// Get Data
 	_, file, _, _ := runtime.Caller(0)
 
-	input, _ := os.Open(path.Dir(file) + "/example")
+	input, _ := os.Open(path.Dir(file) + "/input")
 
 	defer input.Close()
 	scanner := bufio.NewScanner(input)
 
 	ranges := []Range{}
+	needPart1 := true
 
-	part2 := true
-line:
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, " ")
@@ -92,14 +86,9 @@ line:
 			intStart := util.Atoi(parts[0])
 			intEnd := util.Atoi(parts[1])
 
-			if !part2 {
-				if intStart < -50 {
-					continue line
-				}
-
-				if intEnd > 50 {
-					continue line
-				}
+			if (intStart < -50 || intEnd > 50) && needPart1 {
+				fmt.Println("Part 1:", sum(ranges))
+				needPart1 = false
 			}
 
 			switch (i) {
@@ -119,18 +108,14 @@ line:
 		if action == "off" {
 			ranges = removeRange(ranges, newRange)
 		}
-
-		fmt.Println("after", line, len(ranges))
-		// for _, blah := range ranges {
-		// 	fmt.Println(blah)
-		// }
 	}
 
-	fmt.Println("Part 1:", sum(ranges))
+	fmt.Println("Part 2:", sum(ranges))
 }
 
 func sum(ranges []Range) int {
 	count := 0
+
 	for _, aRange := range ranges {
 		xDiff := util.Abs(aRange.xRange.end - aRange.xRange.start) + 1
 		yDiff := util.Abs(aRange.yRange.end - aRange.yRange.start) + 1
@@ -180,7 +165,7 @@ func removeRange(ranges []Range, removeRange Range) []Range {
 			for _, z := range uniqueZAxisRange{
 
 				// if remove range do not include it
-				if checkIfOverlap(removeRange, Range{x, y, z}) {
+				if checkIfInside(Range{x, y, z}, removeRange) {
 					continue
 				}
 
@@ -233,27 +218,23 @@ func mergeRange(ranges []Range, newRange Range) []Range {
 	uniqueYAxisRange := getUniqueAxisRanges(yRanges)
 	uniqueZAxisRange := getUniqueAxisRanges(zRanges)
 
-	rangeCache := map[string]bool{}
-
 	for _, x := range uniqueXAxisRange{
 		for _, y := range uniqueYAxisRange{
 			for _, z := range uniqueZAxisRange{
 
 				rangeVal := Range{x, y, z}
 
-				if _,exists := rangeCache[rangeVal.String()]; !exists {
-					include := false
-					for _,original := range overlapRanges {
-						if checkIfOverlap(original, rangeVal) {
-							include = true
-							break
-						}
-					}
+				include := false
 
-					if include {
-						rangeCache[rangeVal.String()] = true
-						newRanges = append(newRanges, rangeVal)
+				for _,original := range overlapRanges {
+					if checkIfOverlap(original, rangeVal) {
+						include = true
+						break
 					}
+				}
+
+				if include {
+					newRanges = append(newRanges, rangeVal)
 				}
 			}
 		}
@@ -274,38 +255,39 @@ func getUniqueAxisRanges(ranges []AxisRange) []AxisRange {
 
 	sort.Sort(vectors)
 
-	previousVector := Vector{vectors[0].value, "empty"}
+	previousVector := vectors[0]
+	currentRange := AxisRange{vectors[0].value, 0}
 
 	for _, vector := range vectors {
+		if vector.value == previousVector.value && vector.label == previousVector.label {
+			continue
+		}
+
 		if vector.label == "start" {
-			if previousVector.label == "start" { // close current range
 
-				// ignore values that are the same
-				if vector.value == previousVector.value {
-					continue
-				}
-
-				newRanges = append(newRanges, AxisRange{previousVector.value, vector.value - 1})
+			// close current range
+			if (vector.value > currentRange.start) {
+				currentRange.end = vector.value - 1
+				newRanges = append(newRanges, currentRange)
 			}
+
+			newRange := AxisRange{vector.value, 0}
+			currentRange = newRange
 		}
 
 		if vector.label == "end" {
-			if previousVector.label == "start" { // close current range
-				newRanges = append(newRanges, AxisRange{previousVector.value, vector.value})
-			} else {
 
-				// ignore values that are the same
-				if vector.value == previousVector.value {
-					continue
-				}
+			// close current range
+			currentRange.end = vector.value
+			newRanges = append(newRanges, currentRange)
 
-				newRanges = append(newRanges, AxisRange{previousVector.value + 1, vector.value})
-			}
+			newRange := AxisRange{vector.value + 1, 0}
+			currentRange = newRange
 		}
 
-		previousVector = Vector{vector.value, vector.label}
-
+		previousVector = vector
 	}
+
 
 	return newRanges
 }
@@ -321,6 +303,35 @@ func checkIfOverlap(a Range, b Range) bool {
 	}
 
     if (a.zRange.start > b.zRange.end || b.zRange.start > a.zRange.end) {
+		return false
+	}
+
+    return true;
+}
+
+func checkIfInside(a Range, b Range) bool {
+
+	if a.xRange.start < b.xRange.start {
+		return false
+	}
+
+	if a.xRange.end > b.xRange.end {
+		return false
+	}
+
+	if a.yRange.start < b.yRange.start {
+		return false
+	}
+
+	if a.yRange.end > b.yRange.end {
+		return false
+	}
+
+	if a.zRange.start < b.zRange.start {
+		return false
+	}
+
+	if a.zRange.end > b.zRange.end {
 		return false
 	}
 
