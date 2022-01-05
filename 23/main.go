@@ -25,7 +25,7 @@ func main() {
 
 	y := 0
 
-	seenMap := map[string]bool{}
+	seenMap := map[string]int{}
 	atMap := map[string]*util.Coordinate{}
 
 	for scanner.Scan() {
@@ -35,21 +35,25 @@ func main() {
 		x := 0
 		for _,val := range strings.Split(line,"") {
 
+			displayVal := val
 			isLetter := false
+			atNum := 0
 			if unicode.IsLetter([]rune(val)[0]) {
 
 				isLetter = true
-				if _, seen := seenMap[val]; seen {
-					val = strings.ToLower(val)
+				if i, seen := seenMap[val]; seen {
+					atNum = i + 1
 				}
 
+				displayVal = fmt.Sprintf("%s%d", strings.ToLower(val), atNum)
+
 			}
-			burrow.SetValue(x, y, val)
+			burrow.SetValue(x, y, displayVal)
 
 			if isLetter {
 				at := burrow.GetCoordinate(x, y)
-				atMap[val] = &at
-				seenMap[val] = true
+				atMap[displayVal] = &at
+				seenMap[val] = atNum
 			}
 
 			x++
@@ -62,7 +66,7 @@ func main() {
 	lastMove := []string{}
 
 	for {
-		burrow.PrintGrid(2)
+		burrow.PrintGrid(3)
 
 		if done(burrow) {
 			break
@@ -159,7 +163,7 @@ func move(
 
 	cost := 0
 
-	char := strings.ToUpper(toMove)
+	char := strings.ToUpper(string(toMove[0]))
 	switch (char) {
 	case "A":
 		cost += (distance * 1)
@@ -181,35 +185,67 @@ func move(
 func done(burrow util.Grid) bool {
 
 	done := true
-	if strings.ToUpper(burrow.GetCoordinate(3,2).Value.(string)) != "A" {
+	if string(strings.ToUpper(burrow.GetCoordinate(3,2).Value.(string))[0]) != "A" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(3,3).Value.(string)) != "A" {
+	if string(strings.ToUpper(burrow.GetCoordinate(3,3).Value.(string))[0]) != "A" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(5,2).Value.(string)) != "B" {
+	if string(strings.ToUpper(burrow.GetCoordinate(3,4).Value.(string))[0]) != "A" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(5,3).Value.(string)) != "B" {
+	if string(strings.ToUpper(burrow.GetCoordinate(3,5).Value.(string))[0]) != "A" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(7,2).Value.(string)) != "C" {
+	if string(strings.ToUpper(burrow.GetCoordinate(5,2).Value.(string))[0]) != "B" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(7,3).Value.(string)) != "C" {
+	if string(strings.ToUpper(burrow.GetCoordinate(5,3).Value.(string))[0]) != "B" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(9,2).Value.(string)) != "D" {
+	if string(strings.ToUpper(burrow.GetCoordinate(5,4).Value.(string))[0]) != "B" {
 		return false
 	}
 
-	if strings.ToUpper(burrow.GetCoordinate(9,3).Value.(string)) != "D" {
+	if string(strings.ToUpper(burrow.GetCoordinate(5,5).Value.(string))[0]) != "B" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(7,2).Value.(string))[0]) != "C" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(7,3).Value.(string))[0]) != "C" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(7,4).Value.(string))[0]) != "C" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(7,5).Value.(string))[0]) != "C" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(9,2).Value.(string))[0]) != "D" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(9,3).Value.(string))[0]) != "D" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(7,4).Value.(string))[0]) != "C" {
+		return false
+	}
+
+	if string(strings.ToUpper(burrow.GetCoordinate(7,5).Value.(string))[0]) != "C" {
 		return false
 	}
 
