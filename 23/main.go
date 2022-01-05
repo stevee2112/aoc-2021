@@ -109,7 +109,7 @@ func main() {
 		fmt.Println(move)
 	}
 
-	fmt.Printf("Part 1: %d\n", energy)
+	fmt.Printf("Total Energy: %d\n", energy)
 }
 
 func move(
