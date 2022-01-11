@@ -9,8 +9,6 @@ import (
 	"stevee2112/aoc-2021/util"
 	"strings"
 	"strconv"
-	"unicode"
-	//"math"
 )
 
 type Vars struct {
@@ -46,91 +44,58 @@ func main() {
 		vars = append(vars, Vars{util.Atoi(divParts[2]), util.Atoi(modParts[2]), util.Atoi(addParts[2])})
 	}
 
-	fmt.Println(vars)
-
-	// at := 99999999999
-
-	// skipped :=0
-	// i := at
-	// for i > 0 {
-	// 	registry := map[string]int{
-	// 		"w": 0,
-	// 		"x": 0,
-	// 		"y": 0,
-	// 		"z": 0,
-	// 	}
-
-	// 	asString := strconv.Itoa(i)
-
-	// 	if strings.Contains(asString, "0") {
-	// 		skip := int(math.Pow(float64(10), float64((len(asString) - strings.Index(asString, "0")) - 1)))
-	// 		i -= skip
-	// 		continue
-	// 	}
-
-	// 	input := strings.Split(asString, "")
-
-	// 	//fmt.Println("NEW", asString)
-	// 	for _, line := range actions {
-	// 		parts := strings.Split(line, " ")
-	// 		//fmt.Println(line)
-
-	// 		if parts[0] == "inp" {
-	// 			fmt.Println(registry, input)
-	// 		}
-
-	// 		registry, input = doAluAction(registry, input, parts[0], parts[1:])
-	// 	}
-
-	// 	//fmt.Println(i, registry, input)
-	// 	if registry["z"] == 0 {
-	// 		fmt.Println("MATCH", i, registry)
-	// 		break
-	// 	}
-
-	// 	skipped++
-	// 	i--
-	// }
-
 	zSet := map[int]string{
 		0:"",
 	}
 
-	fmt.Println("newWay")
-
-	//fmt.Println(newAluAction(12, 9, 1, 14, 3))
-
-	for i,aVar := range vars {
-		fmt.Println(i, len(zSet))
-		zSet = newAluActionSet(zSet, aVar.divider, aVar.modder, aVar.adder)
-		//fmt.Println(zSet)
+	for _,aVar := range vars {
+		zSet = newMaxAluActionSet(zSet, aVar.divider, aVar.modder, aVar.adder)
 	}
 
-	// zSet = newAluAction(zSet, 26, -5, 13)
-	// fmt.Println(zSet)
-	// zSet = newAluAction(zSet, 26, -8, 3)
-	// fmt.Println(zSet)
-	// zSet = newAluAction(zSet, 26, -11, 10)
+	fmt.Printf("Part 1: %s\n", zSet[0])
 
-	fmt.Println(len(zSet))
-	fmt.Println(zSet[0])
+	zSet = map[int]string{
+		0:"",
+	}
 
+	for _,aVar := range vars {
+		zSet = newMinAluActionSet(zSet, aVar.divider, aVar.modder, aVar.adder)
+	}
+
+	fmt.Printf("Part 2: %s\n", zSet[0])
 }
 
-func newAluActionSet(zSet map[int]string, divider int, modAdd int, addAdd int) map[int]string {
+func newMaxAluActionSet(zSet map[int]string, divider int, modAdd int, addAdd int) map[int]string {
 
 	newZ := map[int]string{}
-    // if (z mod 26) + modAdd == w)
-	//     z = z / 26, 
-	// else 
-	// 	z = z + w + 5
 
 	for z,at := range zSet {
 		for w := 9; w >= 1;w-- {
 			val := newAluAction(z, w, divider, modAdd, addAdd)
 			if currentAt,exists := newZ[val]; exists {
 				newAt := at + strconv.Itoa(w)
-				if util.Atoi(newAt) > util.Atoi(currentAt) {
+				if util.Atoi(newAt) > util.Atoi(currentAt) { // Change this fo
+					newZ[val] = at + strconv.Itoa(w)
+				}
+			} else {
+				newZ[val] = at + strconv.Itoa(w)
+			}
+		}
+	}
+
+	return newZ
+}
+
+func newMinAluActionSet(zSet map[int]string, divider int, modAdd int, addAdd int) map[int]string {
+
+	newZ := map[int]string{}
+
+	for z,at := range zSet {
+		for w := 9; w >= 1;w-- {
+			val := newAluAction(z, w, divider, modAdd, addAdd)
+			if currentAt,exists := newZ[val]; exists {
+				newAt := at + strconv.Itoa(w)
+				if util.Atoi(newAt) < util.Atoi(currentAt) {
 					newZ[val] = at + strconv.Itoa(w)
 				}
 			} else {
@@ -144,13 +109,6 @@ func newAluActionSet(zSet map[int]string, divider int, modAdd int, addAdd int) m
 
 	func newAluAction(z int, w int, divider int, modAdd int, addAdd int) int {
 
-
-	//fmt.Println("new", z, w, divider, modAdd, addAdd)
-    // if (z mod 26) + modAdd == w)
-	//     z = z / 26, 
-	// else 
-	// 	z = z + w + 5
-
 	newVal := 0
 
 	if ((z % 26) + modAdd) == w {
@@ -162,61 +120,4 @@ func newAluActionSet(zSet map[int]string, divider int, modAdd int, addAdd int) m
 	}
 
 	return newVal
-}
-
-
-func doAluAction(registry map[string]int, input []string, instruction string, variables []string) (map[string]int, []string) {
-
-	switch (instruction) {
-	case "inp":
-		registry[variables[0]] = util.Atoi(input[0])
-		input = input[1:]
-	case "add":
-		var val int
-		if unicode.IsLetter([]rune(variables[1])[0]) {
-			val = registry[variables[1]]
-		} else {
-			val = util.Atoi(variables[1])
-		}
-		registry[variables[0]] = registry[variables[0]] + val
-	case "mul":
-		var val int
-		if unicode.IsLetter([]rune(variables[1])[0]) {
-			val = registry[variables[1]]
-		} else {
-			val = util.Atoi(variables[1])
-		}
-		registry[variables[0]] = registry[variables[0]] * val
-	case "div":
-		var val int
-		if unicode.IsLetter([]rune(variables[1])[0]) {
-			val = registry[variables[1]]
-		} else {
-			val = util.Atoi(variables[1])
-		}
-		registry[variables[0]] = registry[variables[0]] / val
-	case "mod":
-		var val int
-		if unicode.IsLetter([]rune(variables[1])[0]) {
-			val = registry[variables[1]]
-		} else {
-			val = util.Atoi(variables[1])
-		}
-		registry[variables[0]] = registry[variables[0]] % val
-	case "eql":
-		var val int
-		if unicode.IsLetter([]rune(variables[1])[0]) {
-			val = registry[variables[1]]
-		} else {
-			val = util.Atoi(variables[1])
-		}
-
-		if registry[variables[0]] == val {
-			registry[variables[0]] = 1
-		} else {
-			registry[variables[0]] = 0
-		}
-	}
-
-	return registry, input
 }
